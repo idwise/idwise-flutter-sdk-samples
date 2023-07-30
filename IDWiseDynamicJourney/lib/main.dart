@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:convert';
 
 import 'my_store.dart'; // Import your store class
 
 void main() {
-  Provider.debugCheckInvalidValueType = null;
   runApp(const MyApp());
 }
 
@@ -61,17 +63,45 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // final MyStore myStore = MyStore();
 
+  static const JOURNEY_ID = "JOURNEY_ID";
+
   static const STEP_ID_DOCUMENT = '0';
   static const STEP_SELFIE = '2';
 
+  static const IDWISE_CLIENT_KEY =
+      "<IDWISE_CLIENT_KEY>"; // Replace from client key here
+  static const JOURNEY_DEFINITION_ID =
+      "<YOUR_JOURNEY_DEFINITION_ID>"; // Replace from journey definition id
+  static const LOCALE = "en";
+
   // bool _isButtonEnabled = true;
+
+  Future<void> clearSaved() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+  }
+
+  Future<void> saveJourneyId(String journeyId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString(JOURNEY_ID, journeyId);
+  }
+
+  Future<String?> retrieveJourneyId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(JOURNEY_ID);
+  }
 
   Future<void> _navigateStep(String stepId) async {
     print("StepId: $stepId");
     platformChannel.invokeMethod('startStep', {"stepId": stepId});
   }
 
-  Future<void> _startIDWise() async {
+  Future<void> unloadSDK() async {
+    print("unloadSDK");
+    platformChannel.invokeMethod('unloadSDK');
+  }
+
+  Future<void> _startResumeJourney() async {
     try {
       /**
        * You can call initialize either in initState() of your Page
@@ -80,11 +110,12 @@ class _MyHomePageState extends State<MyHomePage> {
        * usecase. Further implementation is done in MainActivity.kt for Android
        * and AppDelegate.swift for iOS
        */
+
       context.read<MyStore>().setJourneyStatus(false);
       print("initializing");
       const initializeArgs = {
-        "clientKey": "<YOUR_CLIENT_KEY>", // Replace from client key here
-        "theme": "SYSTEM_DEFAULT", // Values [LIGHT, DARK, SYSTEM_DEFAULT]
+        "clientKey": IDWISE_CLIENT_KEY,
+        "theme": "SYSTEM_DEFAULT", // [LIGHT, DARK, SYSTEM_DEFAULT]
       };
       platformChannel.invokeMethod('initialize', initializeArgs);
 
@@ -95,17 +126,36 @@ class _MyHomePageState extends State<MyHomePage> {
        */
 
       print("starting journey");
-      const startJourneyArgs = {
-        "journeyDefinitionId": "<YOUR_JOURNEY_DEFINITION_ID>", // Replace from journey definition id
-        "referenceNo": null, //Put your reference number here
-        "locale" : "en"
+
+      String? journeyId = await retrieveJourneyId();
+
+      final commonArgs = {
+        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
+        "locale": LOCALE,
       };
-      platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+
+      if (journeyId == null) {
+        final startJourneyArgs = {
+          ...commonArgs,
+          "referenceNo": 'idwise_test_' + const Uuid().v4(),
+          // Put your reference number here
+        };
+        platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+      } else {
+        print("Resuming Journey: " + journeyId);
+        final resumeJourneyArgs = {
+          ...commonArgs,
+          "journeyId": journeyId,
+          // Put your reference number here
+        };
+        platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+      }
 
       platformChannel.setMethodCallHandler((handler) async {
         switch (handler.method) {
           case 'onJourneyStarted':
             context.read<MyStore>().setJourneyStatus(true);
+            saveJourneyId(handler.arguments.toString());
             context.read<MyStore>().setJourneyId(handler.arguments.toString());
             print("Method: onJourneyStarted, ${handler.arguments.toString()}");
             break;
@@ -118,6 +168,8 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onJourneyResumed':
             context.read<MyStore>().setJourneyStatus(true);
             context.read<MyStore>().setJourneyId(handler.arguments.toString());
+            platformChannel.invokeMethod('getJourneySummary',
+                {"journeyId": handler.arguments.toString()});
             print("Method: onJourneyResumed, ${handler.arguments.toString()}");
             break;
           case 'onStepCaptured':
@@ -128,9 +180,30 @@ class _MyHomePageState extends State<MyHomePage> {
             break;
           case 'onStepResult':
             print("Method: onStepResult, ${handler.arguments.toString()}");
+            String? journeyId = await retrieveJourneyId();
+            platformChannel
+                .invokeMethod('getJourneySummary', {"journeyId": journeyId});
             break;
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
+            break;
+          case 'journeySummary':
+            try {
+              Map<String, dynamic> jsonObject = json.decode(handler.arguments);
+              print("summary: " + jsonObject["summary"]);
+
+              bool isCompleted =
+                  json.decode(jsonObject["summary"])["is_completed"];
+              if (isCompleted) {
+                context.read<MyStore>().setJourneyCompleted(true);
+                String? journeyId = await retrieveJourneyId();
+                platformChannel.invokeMethod(
+                    'finishDynamicJourney', {"journeyId": journeyId});
+                clearSaved();
+              }
+            } catch (e) {
+              print("Exception : JourneySummary: $e");
+            }
             break;
           default:
             print('Unknown method from MethodChannel: ${handler.method}');
@@ -145,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    _startIDWise();
+    _startResumeJourney();
 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
@@ -180,7 +253,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     padding: EdgeInsets.only(top: 16.0),
                     child: Text(
                       "Welcome to",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     )),
                 Padding(
                     padding: EdgeInsets.only(top: 16.0),
@@ -190,7 +264,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 Padding(
                     padding: EdgeInsets.only(top: 16.0),
                     child: Text("Please take some time to verify your identity",
-                        style: TextStyle(fontWeight: FontWeight.bold)))
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)))
               ],
             ),
             Expanded(
@@ -254,6 +329,30 @@ class _MyHomePageState extends State<MyHomePage> {
                                     : null)));
                   },
                 ),
+                Consumer<MyStore>(
+                  builder: (context, model, child) {
+                    return Visibility(
+                      visible: model.isJourneyCompleted,
+                      //_isButtonEnabled
+                      child: Padding(
+                          padding: const EdgeInsets.only(
+                              top: 50.0, left: 15.0, right: 15.0),
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.check,
+                                    color: Color(0xff248A3D), size: 36.0),
+                                Padding(
+                                    padding: EdgeInsets.only(top: 10.0),
+                                    child: Text(
+                                        "Congratulations! Your verification has been completed.",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold)))
+                              ])),
+                    );
+                  },
+                ),
               ],
             )),
             Consumer<MyStore>(
@@ -290,7 +389,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                 backgroundColor: Colors.white,
                                 textStyle:
                                     const TextStyle(color: Colors.black)),
-                            onPressed: _startIDWise))))
+                            onPressed: () {
+                              clearSaved();
+                              unloadSDK();
+                              _startResumeJourney();
+                            }))))
           ])),
     );
   }
