@@ -101,56 +101,33 @@ class _MyHomePageState extends State<MyHomePage> {
     platformChannel.invokeMethod('unloadSDK');
   }
 
-  Future<void> _startResumeJourney() async {
+  Future<void> startResumeJourney() async {
     try {
-      /**
-       * You can call initialize either in initState() of your Page
-       * where you are going to start the verification, to pre-initialize the SDK.
-       * Or you can call it along with startJourney(). Which suits best for your
-       * usecase. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
       context.read<MyStore>().setJourneyStatus(false);
-      print("initializing");
-      const initializeArgs = {
-        "clientKey": IDWISE_CLIENT_KEY,
-        "theme": "SYSTEM_DEFAULT", // [LIGHT, DARK, SYSTEM_DEFAULT]
-      };
-      platformChannel.invokeMethod('initialize', initializeArgs);
 
-      /**
-       * You can call the startJourney when you wan to start the verification
-       * process. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
-      print("starting journey");
+      print("Initializing SDK");
+      initializeSDK();
 
       String? journeyId = await retrieveJourneyId();
 
-      final commonArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
-        "locale": LOCALE,
-      };
-
       if (journeyId == null) {
-        final startJourneyArgs = {
-          ...commonArgs,
-          "referenceNo": 'idwise_test_' + const Uuid().v4(),
-          // Put your reference number here
-        };
-        platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+        print("Starting new journey...");
+        startDynamicJourney();
       } else {
-        print("Resuming Journey: " + journeyId);
-        final resumeJourneyArgs = {
-          ...commonArgs,
-          "journeyId": journeyId,
-          // Put your reference number here
-        };
-        platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+        print("Resuming journey...");
+        resumeDynamicJourney(journeyId);
       }
 
+      setJourneyMethodHandler();
+
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
+    print("End");
+  }
+
+  Future<void> setJourneyMethodHandler() async {
+    try {
       platformChannel.setMethodCallHandler((handler) async {
         switch (handler.method) {
           case 'onJourneyStarted':
@@ -216,9 +193,48 @@ class _MyHomePageState extends State<MyHomePage> {
     print("End");
   }
 
+  Future<void> initializeSDK() async {
+    try {
+      const initializeArgs = {
+        "clientKey": IDWISE_CLIENT_KEY,
+        "theme": "SYSTEM_DEFAULT",
+      };
+
+      platformChannel.invokeMethod('initialize', initializeArgs);
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
+  }
+
+  Future<void> startDynamicJourney() async {
+    try {
+      final startJourneyArgs = {
+        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
+        "referenceNo": 'idwise_test_' + const Uuid().v4(),
+        "locale": LOCALE
+      };
+      platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
+  }
+
+  Future<void> resumeDynamicJourney(String journeyId) async {
+    try {
+      final resumeJourneyArgs = {
+        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
+        "journeyId": journeyId,
+        "locale": LOCALE
+      };
+      platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    _startResumeJourney();
+    startResumeJourney();
 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
@@ -392,7 +408,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             onPressed: () {
                               clearSaved();
                               unloadSDK();
-                              _startResumeJourney();
+                              startResumeJourney();
                             }))))
           ])),
     );
