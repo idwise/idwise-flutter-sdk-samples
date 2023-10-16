@@ -1,6 +1,6 @@
 import UIKit
 import Flutter
-import IDWise
+import IDWiseSDK
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -11,7 +11,7 @@ import IDWise
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
+      GeneratedPluginRegistrant.register(with: self)
       
      // Native code bridging Swift -> Dart , calling iOS SDK here
       let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
@@ -51,7 +51,7 @@ import IDWise
                   }
               }
 
-          case "startJourney":
+          case "startDynamicJourney":
               // receiving arguments from Dart side and consuming here
 
               var referenceNo: String = "" // optional parameter
@@ -68,8 +68,65 @@ import IDWise
                       journeyDefinitionId = journeyDefId
                   }
               }
-              IDWise.startJourney(journeyDefinitionId: journeyDefinitionId,referenceNumber: referenceNo,locale: locale, journeyDelegate: self)
+              IDWise.startDynamicJourney(journeyDefinitionId: journeyDefinitionId, referenceNumber: referenceNo, locale: locale, journeyDelegate: self, stepDelegate: self)
               result("successfully started journey")
+          case "startStep":
+            if let parameteres = call.arguments as? [String:Any] {
+                  if let stepId = parameteres["stepId"] as? String {
+                      IDWise.startStep(stepId: stepId)
+                  }
+            }
+          case "resumeDynamicJourney":
+              var locale: String = "en"
+              var journeyDefinitionId = ""
+              var journeyId = ""
+              if let parameteres = call.arguments as? [String:Any] {
+                  if let loc = parameteres["locale"] as? String {
+                      locale = loc
+                  }
+                  if let journeyDefId = parameteres["journeyDefinitionId"] as? String {
+                      journeyDefinitionId = journeyDefId
+                  }
+                  if let journeyID = parameteres["journeyId"] as? String {
+                      journeyId = journeyID
+                  }
+              }
+              
+              IDWise.resumeDynamicJourney(journeyDefinitionId: journeyDefinitionId, journeyId: journeyId, locale: locale, journeyDelegate: self, stepDelegate: self)
+          case "finishDynamicJourney":
+              if let parameteres = call.arguments as? [String:Any] {
+                    if let journeyId = parameteres["journeyId"] as? String {
+                        IDWise.finishDynamicJourney(journeyId: journeyId)
+                    }
+              }
+          case "getJourneySummary":
+              if let parameteres = call.arguments as? [String:Any] {
+                  if let journeyId = parameteres["journeyId"] as? String {
+                      IDWise.getJourneySummary(journeyId: journeyId) { summary, error in
+                          
+                          do {
+                              let jsonData = try JSONEncoder().encode(summary)
+                              var jsonString: Any?
+                              jsonString = try? JSONSerialization.jsonObject(with: jsonData, options: .mutableContainers)
+                              
+                              channel.invokeMethod(
+                                "journeySummary",
+                                arguments: ["summary": jsonString,"error": error] as [String: Any])
+                              
+                          } catch {
+                              channel.invokeMethod(
+                                "journeySummary",
+                                arguments: ["summary": "","error": error] as [String : Any])
+                              
+                          }
+                      }
+                  }
+              }
+              
+          case "unloadSDK":
+              IDWise.unloadSDK()
+              
+
           default:
               result(FlutterMethodNotImplemented)
           }
@@ -116,4 +173,38 @@ extension AppDelegate:IDWiseSDKJourneyDelegate {
                     arguments: nil)
     }
    
+}
+
+extension AppDelegate: IDWiseSDKStepDelegate {
+    func onStepCaptured(stepId: Int, capturedImage: UIImage?) {
+        channel?.invokeMethod(
+                    "onStepCaptured",
+                    arguments: stepId)
+    }
+    
+    func onStepResult(stepId: Int, stepResult: IDWiseSDK.StepResult?) {
+        
+        do {
+            let jsonData = try JSONEncoder().encode(stepResult)
+            var jsonString: Any?
+            jsonString = try? JSONSerialization.jsonObject(with: jsonData, options: .mutableContainers)
+        
+            channel?.invokeMethod(
+              "onStepResult",
+              arguments: ["stepId": stepId,"stepResult": jsonString] as [String : Any])
+        
+        } catch {
+            channel?.invokeMethod(
+              "onStepResult",
+              arguments: ["stepId": stepId] as [String : Any])
+        
+        }
+       
+    }
+    
+    func onStepConfirmed(stepId: String) {
+        
+    }
+    
+    
 }

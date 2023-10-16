@@ -9,7 +9,7 @@ target 'Runner' do
   use_frameworks!
 
   # Pods for Runner
-  pod 'IDWise', '4.1.6'
+  pod 'IDWise'
 
 
   post_install do |installer|

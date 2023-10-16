@@ -1,6 +1,6 @@
 import UIKit
 import Flutter
-import IDWise
+import IDWiseSDK
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -11,7 +11,7 @@ import IDWise
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
+      GeneratedPluginRegistrant.register(withRegistry: self)
       
      // Native code bridging Swift -> Dart , calling iOS SDK here
       let controller : FlutterViewController = window?.rootViewController as! FlutterViewController

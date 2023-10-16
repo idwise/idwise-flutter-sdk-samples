@@ -119,7 +119,6 @@ class _MyHomePageState extends State<MyHomePage> {
       }
 
       setJourneyMethodHandler();
-
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -166,17 +165,18 @@ class _MyHomePageState extends State<MyHomePage> {
             break;
           case 'journeySummary':
             try {
-              Map<String, dynamic> jsonObject = json.decode(handler.arguments);
-              print("summary: " + jsonObject["summary"]);
+              print("summary: " + handler.arguments["summary"].toString());
 
-              bool isCompleted =
-                  json.decode(jsonObject["summary"])["is_completed"];
+              bool isCompleted = handler.arguments["summary"]["is_completed"];
               if (isCompleted) {
+                print("not completed");
                 context.read<MyStore>().setJourneyCompleted(true);
                 String? journeyId = await retrieveJourneyId();
                 platformChannel.invokeMethod(
                     'finishDynamicJourney', {"journeyId": journeyId});
                 clearSaved();
+              } else {
+                print("not completed");
               }
             } catch (e) {
               print("Exception : JourneySummary: $e");
