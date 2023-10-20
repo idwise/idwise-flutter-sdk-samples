@@ -7,15 +7,14 @@ import io.flutter.plugin.common.MethodChannel
 
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 import com.idwise.sdk.IDWiseSDKCallback
-import com.idwise.sdk.data.models.IDWiseSDKError
-import com.idwise.sdk.data.models.JourneyInfo
 import com.idwise.sdk.IDWise
 import com.idwise.sdk.IDWiseSDKStepCallback
-import com.idwise.sdk.data.models.IDWiseSDKTheme
-import com.idwise.sdk.data.models.StepResult
+import com.idwise.sdk.data.models.*
 import org.json.JSONObject
+import java.lang.reflect.Type
 
 class MainActivity : FlutterActivity() {
 
@@ -98,10 +97,19 @@ class MainActivity : FlutterActivity() {
                     val journeyId = call.argument<String>("journeyId")
                     journeyId?.let {
                         IDWise.getJourneySummary(it, callback = { summary, error ->
-                            val json = JSONObject()
-                            json.put("summary", Gson().toJson(summary))
-                            json.put("error", Gson().toJson(error))
-                            methodChannel?.invokeMethod("journeySummary", json.toString())
+
+                            val gson = Gson()
+                            val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
+                            val argsMap = hashMapOf<String, Any?>()
+
+                            summary?.let {
+                                argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
+                            }
+                            error?.let {
+                                argsMap["error"] = gson.fromJson(gson.toJson(error), type)
+                            }
+
+                            methodChannel?.invokeMethod("journeySummary", argsMap)
                         })
                     }
                 }

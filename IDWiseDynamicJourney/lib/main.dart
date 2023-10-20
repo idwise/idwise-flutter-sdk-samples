@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:convert';
 
 import 'my_store.dart'; // Import your store class
 
@@ -134,6 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
             saveJourneyId(handler.arguments.toString());
             context.read<MyStore>().setJourneyId(handler.arguments.toString());
             print("Method: onJourneyStarted, ${handler.arguments.toString()}");
+            getJourneySummary(handler.arguments.toString());
             break;
           case 'onJourneyFinished':
             print("Method: onJourneyFinished");
@@ -144,9 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onJourneyResumed':
             context.read<MyStore>().setJourneyStatus(true);
             context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            platformChannel.invokeMethod('getJourneySummary',
-                {"journeyId": handler.arguments.toString()});
             print("Method: onJourneyResumed, ${handler.arguments.toString()}");
+            getJourneySummary(handler.arguments.toString());
             break;
           case 'onStepCaptured':
             print("Method: onStepCaptured, ${handler.arguments.toString()}");
@@ -157,30 +156,15 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onStepResult':
             print("Method: onStepResult, ${handler.arguments.toString()}");
             String? journeyId = await retrieveJourneyId();
-            platformChannel
-                .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+            if (journeyId != null) {
+              getJourneySummary(journeyId);
+            }
             break;
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
             break;
           case 'journeySummary':
-            try {
-              print("summary: " + handler.arguments["summary"].toString());
-
-              bool isCompleted = handler.arguments["summary"]["is_completed"];
-              if (isCompleted) {
-                print("not completed");
-                context.read<MyStore>().setJourneyCompleted(true);
-                String? journeyId = await retrieveJourneyId();
-                platformChannel.invokeMethod(
-                    'finishDynamicJourney', {"journeyId": journeyId});
-                clearSaved();
-              } else {
-                print("not completed");
-              }
-            } catch (e) {
-              print("Exception : JourneySummary: $e");
-            }
+            handleJourneySummary(handler.arguments);
             break;
           default:
             print('Unknown method from MethodChannel: ${handler.method}');
@@ -229,6 +213,34 @@ class _MyHomePageState extends State<MyHomePage> {
       platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
+    }
+  }
+
+  Future<void> getJourneySummary(String journeyId) async {
+    try {
+      platformChannel
+          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
+  }
+
+  Future<void> handleJourneySummary(dynamic response) async {
+    try {
+      print("JourneySummary - Details: ${response["summary"].toString()}");
+      print("JourneySummary - Error:  ${response["error"].toString()}");
+      bool isCompleted = response["summary"]["is_completed"];
+      print("JourneySummary - Completed: $isCompleted");
+
+      if (isCompleted) {
+        context.read<MyStore>().setJourneyCompleted(true);
+        String? journeyId = await retrieveJourneyId();
+        platformChannel
+            .invokeMethod('finishDynamicJourney', {"journeyId": journeyId});
+        clearSaved();
+      }
+    } catch (e) {
+      print("Exception : JourneySummary: $e");
     }
   }
 

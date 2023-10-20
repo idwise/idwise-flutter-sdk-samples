@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print("initializing");
       const initializeArgs = {
         "clientKey": "<YOUR_CLIENT_KEY>", // Replace from client key here
-        "theme": "SYSTEM_DEFAULT", // Values [LIGHT, DARK, SYSTEM_DEFAULT] 
+        "theme": "SYSTEM_DEFAULT", // Values [LIGHT, DARK, SYSTEM_DEFAULT]
       };
       platformChannel.invokeMethod('initialize', initializeArgs);
 
@@ -101,6 +101,16 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
             break;
+          case 'journeySummary':
+            try {
+              print("JourneySummary - Details: " +
+                  handler.arguments["summary"].toString());
+              print("JourneySummary - Error: " +
+                  handler.arguments["error"].toString());
+            } catch (e) {
+              print("Exception : JourneySummary: $e");
+            }
+            break;
           default :
             print('Unknown method from MethodChannel: ${handler.method}');
             break;
@@ -111,6 +121,15 @@ class _MyHomePageState extends State<MyHomePage> {
       print("Failed : '${e.message}'.");
     }
     print("End");
+  }
+
+  Future<void> getJourneySummary(String journeyId) async {
+    try {
+      platformChannel
+          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+    } on PlatformException catch (e) {
+      print("Failed : '${e.message}'.");
+    }
   }
 
   @override
