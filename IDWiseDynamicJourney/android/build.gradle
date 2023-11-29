@@ -3,11 +3,6 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url 'http://mobile-sdk.idwise.ai/releases/'
-            allowInsecureProtocol = true
-        }
-        maven { url 'https://jitpack.io' }
     }
 
     dependencies {
@@ -20,11 +15,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url 'http://mobile-sdk.idwise.ai/releases/'
-            allowInsecureProtocol = true
-        }
-        maven { url 'https://jitpack.io' }
     }
 }
 
@@ -36,6 +26,6 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-task clean(type: Delete) {
+tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

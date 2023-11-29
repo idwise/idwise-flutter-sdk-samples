@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:idwise_flutter_sdk/idwise_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -73,6 +76,54 @@ class _MyHomePageState extends State<MyHomePage> {
       "<YOUR_JOURNEY_DEFINITION_ID>"; // Replace from journey definition id
   static const LOCALE = "en";
 
+  String? _imageBytes;
+
+  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
+  late IDWiseSDKStepCallbacks _stepCallbacks;
+
+  @override
+  void initState() {
+    super.initState();
+
+    setupCallbacks();
+
+    startResumeJourney();
+  }
+
+  void setupCallbacks() {
+    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
+        onJourneyStarted: (String journeyId) {
+          context.read<MyStore>().setJourneyStatus(true);
+          saveJourneyId(journeyId);
+          context.read<MyStore>().setJourneyId(journeyId);
+          print("Method: onJourneyStarted, $journeyId");
+          getJourneySummary(journeyId);
+        },
+        onJourneyCompleted: () => print("onJourneyCompleted"),
+        onJourneyResumed: (String journeyId) {
+          context.read<MyStore>().setJourneyStatus(true);
+          context.read<MyStore>().setJourneyId(journeyId);
+          print("Method: onJourneyResumed, $journeyId");
+          getJourneySummary(journeyId);
+        },
+        onJourneyCancelled: () => print("onJourneyCancelled"),
+        onError: (dynamic error) => print("onError $error"));
+
+    _stepCallbacks = IDWiseSDKStepCallbacks(
+        onStepCaptured: (String stepId, String capturedImage) {
+      print("Method: onStepCaptured, $stepId");
+      setState(() {
+        _imageBytes = capturedImage;
+      });
+    }, onStepResult: (dynamic response) async {
+      print("Method: onStepResult, $response");
+      String? journeyId = await retrieveJourneyId();
+      if (journeyId != null) {
+        getJourneySummary(journeyId);
+      }
+    });
+  }
+
   // bool _isButtonEnabled = true;
 
   Future<void> clearSaved() async {
@@ -92,12 +143,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _navigateStep(String stepId) async {
     print("StepId: $stepId");
-    platformChannel.invokeMethod('startStep', {"stepId": stepId});
+    IDWise.startStep(stepId);
   }
 
   Future<void> unloadSDK() async {
     print("unloadSDK");
-    platformChannel.invokeMethod('unloadSDK');
+
+    IDWise.unloadSDK();
   }
 
   Future<void> startResumeJourney() async {
@@ -117,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
         resumeDynamicJourney(journeyId);
       }
 
-      setJourneyMethodHandler();
+      //setJourneyMethodHandler();
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -179,12 +231,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> initializeSDK() async {
     try {
-      const initializeArgs = {
-        "clientKey": IDWISE_CLIENT_KEY,
-        "theme": "SYSTEM_DEFAULT",
-      };
-
-      platformChannel.invokeMethod('initialize', initializeArgs);
+      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
+          onError: (error) {
+        print("onError in _idwiseFlutterPlugin: $error");
+      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -192,12 +242,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> startDynamicJourney() async {
     try {
-      final startJourneyArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
-        "referenceNo": 'idwise_test_' + const Uuid().v4(),
-        "locale": LOCALE
-      };
-      platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+      final referenceNo = 'idwise_test_' + const Uuid().v4();
+
+      IDWise.startDynamicJourney(JOURNEY_DEFINITION_ID, referenceNo, LOCALE,
+          _journeyCallbacks, _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -205,12 +253,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> resumeDynamicJourney(String journeyId) async {
     try {
-      final resumeJourneyArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
-        "journeyId": journeyId,
-        "locale": LOCALE
-      };
-      platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+      IDWise.resumeDynamicJourney(JOURNEY_DEFINITION_ID, journeyId, LOCALE,
+          _journeyCallbacks, _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -218,8 +262,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getJourneySummary(String journeyId) async {
     try {
-      platformChannel
-          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+      IDWise.getJourneySummary(journeyId, onJourneySummary: (dynamic response) {
+        handleJourneySummary(response);
+      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -227,6 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> handleJourneySummary(dynamic response) async {
     try {
+      print("handleJourneySummary $response");
       print("JourneySummary - Details: ${response["summary"].toString()}");
       print("JourneySummary - Error:  ${response["error"].toString()}");
       bool isCompleted = response["summary"]["is_completed"];
@@ -246,8 +292,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    startResumeJourney();
-
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -357,6 +401,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                     : null)));
                   },
                 ),
+                SizedBox(
+                    height: 200,
+                    child: _imageBytes != null
+                        ? Image.memory(base64Decode(_imageBytes!))
+                        : Text("")),
                 Consumer<MyStore>(
                   builder: (context, model, child) {
                     return Visibility(

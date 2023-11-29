@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:idwise_flutter/idwise_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,74 +54,22 @@ class _MyHomePageState extends State<MyHomePage> {
   static const methodChannelName = "com.idwise.fluttersampleproject/idwise";
   static const platformChannel = MethodChannel(methodChannelName);
 
+   String clientKey =
+      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVub";
+  String journeyDefinitionId = "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23";
+  String referenceNo = "";
+  String locale = "en";
+
+
   Future<void> _startIDWise() async {
     try {
-      /**
-       * You can call initialize either in initState() of your Page
-       * where you are going to start the verification, to pre-initialize the SDK.
-       * Or you can call it along with startJourney(). Which suits best for your
-       * usecase. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
-      print("initializing");
-      const initializeArgs = {
-        "clientKey": "<YOUR_CLIENT_KEY>", // Replace from client key here
-        "theme": "SYSTEM_DEFAULT", // Values [LIGHT, DARK, SYSTEM_DEFAULT]
-      };
-      platformChannel.invokeMethod('initialize', initializeArgs);
-
-      /**
-       * You can call the startJourney when you wan to start the verification
-       * process. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
-      print("starting journey");
-      const startJourneyArgs = {
-        "journeyDefinitionId": "<YOUR_JOURNEY_DEFINITION_ID>", // Replace from journey definition id
-        "referenceNo": null, //Put your reference number here
-        "locale" : "en"
-      };
-      platformChannel.invokeMethod('startJourney', startJourneyArgs);
-
-      platformChannel.setMethodCallHandler((handler) async {
-        switch (handler.method) {
-          case 'onJourneyStarted':
-            print("Method: onJourneyStarted, ${handler.arguments.toString()}");
-            break;
-          case 'onJourneyFinished':
-            print("Method: onJourneyFinished");
-            break;
-          case 'onJourneyCancelled':
-            print("Method: onJourneyCancelled");
-            break;
-          case 'onJourneyResumed':
-            print("Method: onJourneyResumed, ${handler.arguments.toString()}");
-            break;
-          case 'onError':
-            print("Method: onError, ${handler.arguments.toString()}");
-            break;
-          case 'journeySummary':
-            try {
-              print("JourneySummary - Details: " +
-                  handler.arguments["summary"].toString());
-              print("JourneySummary - Error: " +
-                  handler.arguments["error"].toString());
-            } catch (e) {
-              print("Exception : JourneySummary: $e");
-            }
-            break;
-          default :
-            print('Unknown method from MethodChannel: ${handler.method}');
-            break;
-        }
+       IDWise.initialize(clientKey, "DARK", onError: (error) {
+          print("onError in _idwiseFlutterPlugin: $error");
       });
 
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
-    print("End");
   }
 
   Future<void> getJourneySummary(String journeyId) async {
