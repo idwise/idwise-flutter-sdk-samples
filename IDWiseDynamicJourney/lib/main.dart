@@ -71,9 +71,9 @@ class _MyHomePageState extends State<MyHomePage> {
   static const STEP_SELFIE = '2';
 
   static const IDWISE_CLIENT_KEY =
-      "<IDWISE_CLIENT_KEY>"; // Replace from client key here
+      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVubHBjbGhUYld4aU1GcDNOMWcyTkVwWWNrTXlOa1Z4U21oWlNsaz0="; // Replace from client key here
   static const JOURNEY_DEFINITION_ID =
-      "<YOUR_JOURNEY_DEFINITION_ID>"; // Replace from journey definition id
+      "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23"; // Replace from journey definition id
   static const LOCALE = "en";
 
   String? _imageBytes;
@@ -92,35 +92,33 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void setupCallbacks() {
     _journeyCallbacks = IDWiseSDKJourneyCallbacks(
-        onJourneyStarted: (String journeyId) {
+        onJourneyStarted: (dynamic journeyInfo) {
           context.read<MyStore>().setJourneyStatus(true);
-          saveJourneyId(journeyId);
-          context.read<MyStore>().setJourneyId(journeyId);
-          print("Method: onJourneyStarted, $journeyId");
-          getJourneySummary(journeyId);
+          saveJourneyId(journeyInfo["journeyId"]);
+          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          print("Method: onJourneyStarted, $journeyInfo");
+          getJourneySummary(journeyInfo["journeyId"]);
         },
-        onJourneyCompleted: () => print("onJourneyCompleted"),
-        onJourneyResumed: (String journeyId) {
+        onJourneyCompleted: (dynamic journeyInfo) =>
+            print("onJourneyCompleted: $journeyInfo"),
+        onJourneyCancelled: (dynamic journeyInfo) =>
+            print("onJourneyCancelled: $journeyInfo"),
+        onJourneyResumed: (dynamic journeyInfo) {
           context.read<MyStore>().setJourneyStatus(true);
-          context.read<MyStore>().setJourneyId(journeyId);
-          print("Method: onJourneyResumed, $journeyId");
-          getJourneySummary(journeyId);
+          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          print("Method: onJourneyResumed, $journeyInfo");
+          getJourneySummary(journeyInfo["journeyId"]);
         },
-        onJourneyCancelled: () => print("onJourneyCancelled"),
         onError: (dynamic error) => print("onError $error"));
 
     _stepCallbacks = IDWiseSDKStepCallbacks(
         onStepCaptured: (String stepId, String capturedImage) {
       print("Method: onStepCaptured, $stepId");
-      setState(() {
+      /*setState(() {
         _imageBytes = capturedImage;
-      });
+      });*/
     }, onStepResult: (dynamic response) async {
       print("Method: onStepResult, $response");
-      String? journeyId = await retrieveJourneyId();
-      if (journeyId != null) {
-        getJourneySummary(journeyId);
-      }
     });
   }
 
@@ -168,61 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
         print("Resuming journey...");
         resumeDynamicJourney(journeyId);
       }
-
-      //setJourneyMethodHandler();
-    } on PlatformException catch (e) {
-      print("Failed : '${e.message}'.");
-    }
-    print("End");
-  }
-
-  Future<void> setJourneyMethodHandler() async {
-    try {
-      platformChannel.setMethodCallHandler((handler) async {
-        switch (handler.method) {
-          case 'onJourneyStarted':
-            context.read<MyStore>().setJourneyStatus(true);
-            saveJourneyId(handler.arguments.toString());
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyStarted, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
-            break;
-          case 'onJourneyFinished':
-            print("Method: onJourneyFinished");
-            break;
-          case 'onJourneyCancelled':
-            print("Method: onJourneyCancelled");
-            break;
-          case 'onJourneyResumed':
-            context.read<MyStore>().setJourneyStatus(true);
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyResumed, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
-            break;
-          case 'onStepCaptured':
-            print("Method: onStepCaptured, ${handler.arguments.toString()}");
-            break;
-          case 'onStepConfirmed':
-            print("Method: onStepConfirmed, ${handler.arguments.toString()}");
-            break;
-          case 'onStepResult':
-            print("Method: onStepResult, ${handler.arguments.toString()}");
-            String? journeyId = await retrieveJourneyId();
-            if (journeyId != null) {
-              getJourneySummary(journeyId);
-            }
-            break;
-          case 'onError':
-            print("Method: onError, ${handler.arguments.toString()}");
-            break;
-          case 'journeySummary':
-            handleJourneySummary(handler.arguments);
-            break;
-          default:
-            print('Unknown method from MethodChannel: ${handler.method}');
-            break;
-        }
-      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }

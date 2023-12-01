@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:idwise_flutter/idwise_flutter.dart';
+import 'package:idwise_flutter_sdk/idwise_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,28 +55,49 @@ class _MyHomePageState extends State<MyHomePage> {
   static const methodChannelName = "com.idwise.fluttersampleproject/idwise";
   static const platformChannel = MethodChannel(methodChannelName);
 
-   String clientKey =
-      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVub";
-  String journeyDefinitionId = "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23";
-  String referenceNo = "";
-  String locale = "en";
+  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
 
+  String IDWISE_CLIENT_KEY =
+      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVubHBjbGhUYld4aU1GcDNOMWcyTkVwWWNrTXlOa1Z4U21oWlNsaz0=";
+  String JOURNEY_DEFINITION_ID = "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23";
+  String referenceNo = "<REFERENCE_NO>";
+  String LOCALE = "en";
 
-  Future<void> _startIDWise() async {
+  @override
+  void initState() {
+    super.initState();
+    setupCallbacks();
+    initializeSDK();
+  }
+
+  void setupCallbacks() {
+    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
+        onJourneyStarted: (dynamic journeyInfo) =>
+            print("onJourneyStarted: $journeyInfo"),
+        onJourneyCompleted: (dynamic journeyInfo) =>
+            print("onJourneyCompleted: $journeyInfo"),
+        onJourneyResumed: (dynamic journeyInfo) =>
+            print("onJourneyResumed: $journeyInfo"),
+        onJourneyCancelled: (dynamic journeyInfo) =>
+            print("onJourneyCancelled: $journeyInfo"),
+        onError: (dynamic error) => print("onError $error"));
+  }
+
+  void initializeSDK() {
     try {
-       IDWise.initialize(clientKey, "DARK", onError: (error) {
-          print("onError in _idwiseFlutterPlugin: $error");
+      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
+          onError: (error) {
+        print("onError in _idwiseFlutterPlugin: $error");
       });
-
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
   }
 
-  Future<void> getJourneySummary(String journeyId) async {
+  Future<void> startJourney() async {
     try {
-      platformChannel
-          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+      IDWise.startJourney(
+          JOURNEY_DEFINITION_ID, referenceNo, LOCALE, _journeyCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -120,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: ElevatedButton.styleFrom(
                   primary: const Color(0xff4B5EB9),
                   textStyle: const TextStyle(color: Colors.white)),
-              onPressed: _startIDWise,
+              onPressed: startJourney,
             )
           ],
         ),
