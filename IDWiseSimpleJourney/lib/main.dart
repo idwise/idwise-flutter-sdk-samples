@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:idwise_flutter_sdk/idwise_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,80 +55,48 @@ class _MyHomePageState extends State<MyHomePage> {
   static const methodChannelName = "com.idwise.fluttersampleproject/idwise";
   static const platformChannel = MethodChannel(methodChannelName);
 
-  Future<void> _startIDWise() async {
+  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
+
+  String IDWISE_CLIENT_KEY = "<CLIENT_KEY>"; // Provided by IDWise
+  String JOURNEY_DEFINITION_ID = "<FLOW_ID>"; // Provided by IDWise
+  String referenceNo = "<REFERENCE_NO>";
+  String LOCALE = "en";
+
+  @override
+  void initState() {
+    super.initState();
+    setupCallbacks();
+    initializeSDK();
+  }
+
+  void setupCallbacks() {
+    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
+        onJourneyStarted: (dynamic journeyInfo) =>
+            print("onJourneyStarted: $journeyInfo"),
+        onJourneyCompleted: (dynamic journeyInfo) =>
+            print("onJourneyCompleted: $journeyInfo"),
+        onJourneyResumed: (dynamic journeyInfo) =>
+            print("onJourneyResumed: $journeyInfo"),
+        onJourneyCancelled: (dynamic journeyInfo) =>
+            print("onJourneyCancelled: $journeyInfo"),
+        onError: (dynamic error) => print("onError $error"));
+  }
+
+  void initializeSDK() {
     try {
-      /**
-       * You can call initialize either in initState() of your Page
-       * where you are going to start the verification, to pre-initialize the SDK.
-       * Or you can call it along with startJourney(). Which suits best for your
-       * usecase. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
-      print("initializing");
-      const initializeArgs = {
-        "clientKey": "<YOUR_CLIENT_KEY>", // Replace from client key here
-        "theme": "SYSTEM_DEFAULT", // Values [LIGHT, DARK, SYSTEM_DEFAULT]
-      };
-      platformChannel.invokeMethod('initialize', initializeArgs);
-
-      /**
-       * You can call the startJourney when you wan to start the verification
-       * process. Further implementation is done in MainActivity.kt for Android
-       * and AppDelegate.swift for iOS
-       */
-
-      print("starting journey");
-      const startJourneyArgs = {
-        "journeyDefinitionId": "<YOUR_JOURNEY_DEFINITION_ID>", // Replace from journey definition id
-        "referenceNo": null, //Put your reference number here
-        "locale" : "en"
-      };
-      platformChannel.invokeMethod('startJourney', startJourneyArgs);
-
-      platformChannel.setMethodCallHandler((handler) async {
-        switch (handler.method) {
-          case 'onJourneyStarted':
-            print("Method: onJourneyStarted, ${handler.arguments.toString()}");
-            break;
-          case 'onJourneyFinished':
-            print("Method: onJourneyFinished");
-            break;
-          case 'onJourneyCancelled':
-            print("Method: onJourneyCancelled");
-            break;
-          case 'onJourneyResumed':
-            print("Method: onJourneyResumed, ${handler.arguments.toString()}");
-            break;
-          case 'onError':
-            print("Method: onError, ${handler.arguments.toString()}");
-            break;
-          case 'journeySummary':
-            try {
-              print("JourneySummary - Details: " +
-                  handler.arguments["summary"].toString());
-              print("JourneySummary - Error: " +
-                  handler.arguments["error"].toString());
-            } catch (e) {
-              print("Exception : JourneySummary: $e");
-            }
-            break;
-          default :
-            print('Unknown method from MethodChannel: ${handler.method}');
-            break;
-        }
+      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
+          onError: (error) {
+        print("onError in _idwiseFlutterPlugin: $error");
       });
-
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
-    print("End");
   }
 
-  Future<void> getJourneySummary(String journeyId) async {
+  Future<void> startJourney() async {
     try {
-      platformChannel
-          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+      IDWise.startJourney(
+          JOURNEY_DEFINITION_ID, referenceNo, LOCALE, _journeyCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -171,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: ElevatedButton.styleFrom(
                   primary: const Color(0xff4B5EB9),
                   textStyle: const TextStyle(color: Colors.white)),
-              onPressed: _startIDWise,
+              onPressed: startJourney,
             )
           ],
         ),

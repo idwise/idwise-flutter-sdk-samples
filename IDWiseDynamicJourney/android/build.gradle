@@ -2,10 +2,9 @@ buildscript {
     ext.kotlin_version = '1.7.10'
     repositories {
         google()
-        mavenCentral()
+        mavenCentral() 
         maven {
-            url 'http://mobile-sdk.idwise.ai/releases/'
-            allowInsecureProtocol = true
+            url 'https://mobile-sdk.idwise.ai/releases/'
         }
         maven { url 'https://jitpack.io' }
     }
@@ -21,8 +20,7 @@ allprojects {
         google()
         mavenCentral()
         maven {
-            url 'http://mobile-sdk.idwise.ai/releases/'
-            allowInsecureProtocol = true
+            url 'https://mobile-sdk.idwise.ai/releases/'
         }
         maven { url 'https://jitpack.io' }
     }
@@ -36,6 +34,6 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-task clean(type: Delete) {
+tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

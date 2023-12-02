@@ -1,0 +1,6 @@
+framework module idwise_flutter_sdk {
+  umbrella header "idwise_flutter_sdk-umbrella.h"
+
+  export *
+  module * { export * }
+}

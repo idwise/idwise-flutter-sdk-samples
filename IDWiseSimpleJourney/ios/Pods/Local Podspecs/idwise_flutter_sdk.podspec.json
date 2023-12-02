@@ -1,0 +1,39 @@
+{
+  "name": "idwise_flutter_sdk",
+  "version": "4.3.4",
+  "summary": "Flutter Plugin for IDWise SDK",
+  "description": "Flutter Plugin for IDWise SDK",
+  "homepage": "http://idwise.com",
+  "license": {
+    "file": "../LICENSE"
+  },
+  "authors": {
+    "Your Company": "email@example.com"
+  },
+  "source": {
+    "path": "."
+  },
+  "source_files": "Classes/**/*",
+  "static_framework": true,
+  "dependencies": {
+    "Flutter": [
+
+    ]
+  },
+  "platforms": {
+    "ios": "12.0"
+  },
+  "pod_target_xcconfig": {
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": "arm64"
+  },
+  "swift_versions": "5.0",
+  "preserve_paths": "IDWiseSDK.xcframework/**/*",
+  "xcconfig": {
+    "OTHER_LDFLAGS": "-framework IDWiseSDK"
+  },
+  "vendored_frameworks": "IDWiseSDK.xcframework",
+  "user_target_xcconfig": {
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": "arm64"
+  },
+  "swift_version": "5.0"
+}
