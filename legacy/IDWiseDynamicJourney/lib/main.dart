@@ -160,6 +160,9 @@ class _MyHomePageState extends State<MyHomePage> {
               getJourneySummary(journeyId);
             }
             break;
+          case 'onStepCancelled':
+            print("Method: onStepCancelled, ${handler.arguments.toString()}");
+            break;
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
             break;

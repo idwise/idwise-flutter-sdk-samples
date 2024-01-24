@@ -37,7 +37,7 @@ dependencies:
   provider: ^6.0.5
   shared_preferences: ^2.2.0
   uuid: ^3.0.7
-  idwise_flutter_sdk: ^0.1.4
+  idwise_flutter_sdk: 4.5.5
 
 dev_dependencies:
   flutter_test:

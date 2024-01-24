@@ -192,5 +192,9 @@ class MainActivity : FlutterActivity() {
             methodChannel?.invokeMethod("onStepResult", json.toString())
         }
 
+        override fun onStepCancelled(stepId: String) {
+            Log.d("IDWiseStepSDKCallback", "onStepCancelled")
+            methodChannel?.invokeMethod("onStepCancelled", stepId)
+        }
     }
 }

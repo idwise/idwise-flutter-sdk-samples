@@ -117,6 +117,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });*/
     }, onStepResult: (dynamic response) async {
       print("Method: onStepResult, $response");
+    }, onStepCancelled: (dynamic response) async {
+      print("Method: onStepCancelled, $response");
     });
   }
 
