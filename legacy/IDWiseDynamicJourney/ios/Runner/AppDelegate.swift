@@ -191,7 +191,7 @@ extension AppDelegate: IDWiseSDKStepDelegate {
         
             channel?.invokeMethod(
               "onStepResult",
-              arguments: ["stepId": stepId,"stepResult": jsonString] as [String : Any])
+              arguments: ["stepId": stepId,"stepResult": jsonString] as [String : Any?])
         
         } catch {
             channel?.invokeMethod(
@@ -206,5 +206,9 @@ extension AppDelegate: IDWiseSDKStepDelegate {
         
     }
     
-    
+    public func onStepCancelled(stepId: String) {
+        channel?.invokeMethod(
+                "onStepCancelled",
+                arguments: ["stepId": stepId] as [String: Any])
+    }
 }
