@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:idwise_flutter_sdk/idwise_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -67,11 +70,57 @@ class _MyHomePageState extends State<MyHomePage> {
   static const STEP_ID_DOCUMENT = '0';
   static const STEP_SELFIE = '2';
 
-  static const IDWISE_CLIENT_KEY =
-      "<IDWISE_CLIENT_KEY>"; // Replace from client key here
-  static const JOURNEY_DEFINITION_ID =
-      "<YOUR_JOURNEY_DEFINITION_ID>"; // Replace from journey definition id
+  static const IDWISE_CLIENT_KEY = "<CLIENT_KEY>"; // Provided by IDWise
+  static const JOURNEY_DEFINITION_ID = "<FLOW_ID>"; // Provided by IDWise
   static const LOCALE = "en";
+
+  String? _imageBytes;
+
+  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
+  late IDWiseSDKStepCallbacks _stepCallbacks;
+
+  @override
+  void initState() {
+    super.initState();
+
+    setupCallbacks();
+
+    startResumeJourney();
+  }
+
+  void setupCallbacks() {
+    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
+        onJourneyStarted: (dynamic journeyInfo) {
+          print("Method: onJourneyStarted, $journeyInfo");
+          context.read<MyStore>().setJourneyStatus(true);
+          saveJourneyId(journeyInfo["journeyId"]);
+          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          getJourneySummary(journeyInfo["journeyId"]);
+        },
+        onJourneyCompleted: (dynamic journeyInfo) =>
+            print("onJourneyCompleted: $journeyInfo"),
+        onJourneyCancelled: (dynamic journeyInfo) =>
+            print("onJourneyCancelled: $journeyInfo"),
+        onJourneyResumed: (dynamic journeyInfo) {
+          print("Method: onJourneyResumed, ${journeyInfo["journeyId"]}");
+          context.read<MyStore>().setJourneyStatus(true);
+          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          getJourneySummary(journeyInfo["journeyId"]);
+        },
+        onError: (dynamic error) => print("onError $error"));
+
+    _stepCallbacks = IDWiseSDKStepCallbacks(onStepCaptured: (dynamic response) {
+      print("Method: onStepCaptured, ${response["stepId"]}");
+      print("Method: capturedImage, ${response["capturedImage"]}");
+      /*setState(() {
+        _imageBytes = response["capturedImage"];
+      });*/
+    }, onStepResult: (dynamic response) async {
+      print("Method: onStepResult, $response");
+    }, onStepCancelled: (dynamic response) async {
+      print("Method: onStepCancelled, $response");
+    });
+  }
 
   // bool _isButtonEnabled = true;
 
@@ -92,12 +141,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _navigateStep(String stepId) async {
     print("StepId: $stepId");
-    platformChannel.invokeMethod('startStep', {"stepId": stepId});
+    IDWise.startStep(stepId);
   }
 
   Future<void> unloadSDK() async {
     print("unloadSDK");
-    platformChannel.invokeMethod('unloadSDK');
+
+    IDWise.unloadSDK();
   }
 
   Future<void> startResumeJourney() async {
@@ -116,61 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
         print("Resuming journey...");
         resumeDynamicJourney(journeyId);
       }
-
-      setJourneyMethodHandler();
-    } on PlatformException catch (e) {
-      print("Failed : '${e.message}'.");
-    }
-    print("End");
-  }
-
-  Future<void> setJourneyMethodHandler() async {
-    try {
-      platformChannel.setMethodCallHandler((handler) async {
-        switch (handler.method) {
-          case 'onJourneyStarted':
-            context.read<MyStore>().setJourneyStatus(true);
-            saveJourneyId(handler.arguments.toString());
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyStarted, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
-            break;
-          case 'onJourneyFinished':
-            print("Method: onJourneyFinished");
-            break;
-          case 'onJourneyCancelled':
-            print("Method: onJourneyCancelled");
-            break;
-          case 'onJourneyResumed':
-            context.read<MyStore>().setJourneyStatus(true);
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyResumed, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
-            break;
-          case 'onStepCaptured':
-            print("Method: onStepCaptured, ${handler.arguments.toString()}");
-            break;
-          case 'onStepConfirmed':
-            print("Method: onStepConfirmed, ${handler.arguments.toString()}");
-            break;
-          case 'onStepResult':
-            print("Method: onStepResult, ${handler.arguments.toString()}");
-            String? journeyId = await retrieveJourneyId();
-            if (journeyId != null) {
-              getJourneySummary(journeyId);
-            }
-            break;
-          case 'onError':
-            print("Method: onError, ${handler.arguments.toString()}");
-            break;
-          case 'journeySummary':
-            handleJourneySummary(handler.arguments);
-            break;
-          default:
-            print('Unknown method from MethodChannel: ${handler.method}');
-            break;
-        }
-      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -179,12 +174,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> initializeSDK() async {
     try {
-      const initializeArgs = {
-        "clientKey": IDWISE_CLIENT_KEY,
-        "theme": "SYSTEM_DEFAULT",
-      };
-
-      platformChannel.invokeMethod('initialize', initializeArgs);
+      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
+          onError: (error) {
+        print("onError in _idwiseFlutterPlugin: $error");
+      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -192,12 +185,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> startDynamicJourney() async {
     try {
-      final startJourneyArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
-        "referenceNo": 'idwise_test_' + const Uuid().v4(),
-        "locale": LOCALE
-      };
-      platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+      final referenceNo = 'idwise_test_' + const Uuid().v4();
+
+      IDWise.startDynamicJourney(JOURNEY_DEFINITION_ID, referenceNo, LOCALE,
+          _journeyCallbacks, _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -205,12 +196,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> resumeDynamicJourney(String journeyId) async {
     try {
-      final resumeJourneyArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
-        "journeyId": journeyId,
-        "locale": LOCALE
-      };
-      platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+      IDWise.resumeDynamicJourney(JOURNEY_DEFINITION_ID, journeyId, LOCALE,
+          _journeyCallbacks, _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -218,8 +205,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getJourneySummary(String journeyId) async {
     try {
-      platformChannel
-          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+      IDWise.getJourneySummary(journeyId, onJourneySummary: (dynamic response) {
+        handleJourneySummary(response);
+      });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -227,6 +215,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> handleJourneySummary(dynamic response) async {
     try {
+      print("handleJourneySummary $response");
       print("JourneySummary - Details: ${response["summary"].toString()}");
       print("JourneySummary - Error:  ${response["error"].toString()}");
       bool isCompleted = response["summary"]["is_completed"];
@@ -246,8 +235,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    startResumeJourney();
-
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -357,6 +344,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                     : null)));
                   },
                 ),
+                SizedBox(
+                    height: 200,
+                    child: _imageBytes != null
+                        ? Image.memory(base64Decode(_imageBytes!))
+                        : Text("")),
                 Consumer<MyStore>(
                   builder: (context, model, child) {
                     return Visibility(
