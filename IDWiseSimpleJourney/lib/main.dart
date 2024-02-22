@@ -57,8 +57,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late IDWiseSDKJourneyCallbacks _journeyCallbacks;
 
-  String IDWISE_CLIENT_KEY = "<CLIENT_KEY>"; // Provided by IDWise
-  String JOURNEY_DEFINITION_ID = "<FLOW_ID>"; // Provided by IDWise
+  String IDWISE_CLIENT_KEY =
+      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVubHBjbGhUYld4aU1GcDNOMWcyTkVwWWNrTXlOa1Z4U21oWlNsaz0="; // Provided by IDWise
+  String JOURNEY_DEFINITION_ID =
+      "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23"; // Provided by IDWise
   String referenceNo = "<REFERENCE_NO>";
   String LOCALE = "en";
 

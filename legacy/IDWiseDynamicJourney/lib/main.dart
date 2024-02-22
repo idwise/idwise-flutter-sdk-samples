@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -133,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
             saveJourneyId(handler.arguments.toString());
             context.read<MyStore>().setJourneyId(handler.arguments.toString());
             print("Method: onJourneyStarted, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
+            getJourneySummary();
             break;
           case 'onJourneyFinished':
             print("Method: onJourneyFinished");
@@ -162,6 +163,9 @@ class _MyHomePageState extends State<MyHomePage> {
             break;
           case 'onStepCancelled':
             print("Method: onStepCancelled, ${handler.arguments.toString()}");
+            break;
+          case 'onStepSkipped':
+            print("Method: onStepSkipped, ${handler.arguments.toString()}");
             break;
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
@@ -221,8 +225,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getJourneySummary(String journeyId) async {
     try {
-      platformChannel
-          .invokeMethod('getJourneySummary', {"journeyId": journeyId});
+      platformChannel.invokeMethod('getJourneySummary');
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -238,8 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (isCompleted) {
         context.read<MyStore>().setJourneyCompleted(true);
         String? journeyId = await retrieveJourneyId();
-        platformChannel
-            .invokeMethod('finishDynamicJourney', {"journeyId": journeyId});
+        platformChannel.invokeMethod('finishDynamicJourney');
         clearSaved();
       }
     } catch (e) {

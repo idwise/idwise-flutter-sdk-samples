@@ -50,6 +50,11 @@ class MainActivity : FlutterActivity() {
                     stepId?.let { IDWise.startStep(this, it); }
                 }
 
+                "skipStep" -> {
+                    val stepId = call.argument<String>("stepId")
+                    stepId?.let { IDWise.skipStep(this, it); }
+                }
+
                 "startDynamicJourney" -> {
                     Log.d("startDynamicJourney", "startDynamicJourney")
                     val journeyDefinitionId = call.argument<String>("journeyDefinitionId")
@@ -89,29 +94,25 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "finishDynamicJourney" -> {
-                    val journeyId = call.argument<String>("journeyId")
-                    journeyId?.let { IDWise.finishDynamicJourney(it) }
+                    IDWise.finishDynamicJourney(it)
                 }
 
                 "getJourneySummary" -> {
-                    val journeyId = call.argument<String>("journeyId")
-                    journeyId?.let {
-                        IDWise.getJourneySummary(it, callback = { summary, error ->
+                    IDWise.getJourneySummary(it, callback = { summary, error ->
 
-                            val gson = Gson()
-                            val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
-                            val argsMap = hashMapOf<String, Any?>()
+                        val gson = Gson()
+                        val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
+                        val argsMap = hashMapOf<String, Any?>()
 
-                            summary?.let {
-                                argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
-                            }
-                            error?.let {
-                                argsMap["error"] = gson.fromJson(gson.toJson(error), type)
-                            }
+                        summary?.let {
+                            argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
+                        }
+                        error?.let {
+                            argsMap["error"] = gson.fromJson(gson.toJson(error), type)
+                        }
 
-                            methodChannel?.invokeMethod("journeySummary", argsMap)
-                        })
-                    }
+                        methodChannel?.invokeMethod("journeySummary", argsMap)
+                    })
                 }
 
                 "unloadSDK" -> {
@@ -195,6 +196,11 @@ class MainActivity : FlutterActivity() {
         override fun onStepCancelled(stepId: String) {
             Log.d("IDWiseStepSDKCallback", "onStepCancelled")
             methodChannel?.invokeMethod("onStepCancelled", stepId)
+        }
+
+        override fun onStepSkipped(stepId: String) {
+            Log.d("IDWiseStepSDKCallback", "onStepSkipped")
+            methodChannel?.invokeMethod("onStepSkipped", stepId)
         }
     }
 }

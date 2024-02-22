@@ -94,24 +94,23 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "getJourneySummary" -> {
-                    val journeyId = call.argument<String>("journeyId")
-                    journeyId?.let {
-                        IDWise.getJourneySummary(it, callback = { summary, error ->
+                    
+                    IDWise.getJourneySummary(callback = { summary, error ->
 
-                            val gson = Gson()
-                            val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
-                            val argsMap = hashMapOf<String, Any?>()
+                        val gson = Gson()
+                        val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
+                        val argsMap = hashMapOf<String, Any?>()
 
-                            summary?.let {
-                                argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
-                            }
-                            error?.let {
-                                argsMap["error"] = gson.fromJson(gson.toJson(error), type)
-                            }
+                        summary?.let {
+                            argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
+                        }
+                        error?.let {
+                            argsMap["error"] = gson.fromJson(gson.toJson(error), type)
+                        }
 
-                            methodChannel?.invokeMethod("journeySummary", argsMap)
-                        })
-                    }
+                        methodChannel?.invokeMethod("journeySummary", argsMap)
+                    })
+                
                 }
 
                 else -> result.error("NO_SUCH_METHOD", "NO SUCH METHOD", null)
