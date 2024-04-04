@@ -70,10 +70,8 @@ class _MyHomePageState extends State<MyHomePage> {
   static const STEP_ID_DOCUMENT = '10';
   static const STEP_SELFIE = '20';
 
-  static const IDWISE_CLIENT_KEY =
-      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVubHBjbGhUYld4aU1GcDNOMWcyTkVwWWNrTXlOa1Z4U21oWlNsaz0="; // Provided by IDWise
-  static const JOURNEY_DEFINITION_ID =
-      "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23"; // Provided by IDWise
+  static const IDWISE_CLIENT_KEY = "CLIENT-KEY"; // Provided by IDWise
+  static const JOURNEY_DEFINITION_ID = "FLOW_ID"; // Provided by IDWise
   static const LOCALE = "en";
 
   String? _imageBytes;
@@ -97,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
           context.read<MyStore>().setJourneyStatus(true);
           saveJourneyId(journeyInfo["journeyId"]);
           context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
-          getJourneySummary(journeyInfo["journeyId"]);
+          getJourneySummary();
         },
         onJourneyCompleted: (dynamic journeyInfo) =>
             print("onJourneyCompleted: $journeyInfo"),
@@ -107,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
           print("Method: onJourneyResumed, ${journeyInfo["journeyId"]}");
           context.read<MyStore>().setJourneyStatus(true);
           context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
-          getJourneySummary(journeyInfo["journeyId"]);
+          getJourneySummary();
         },
         onError: (dynamic error) => print("onError $error"));
 
@@ -119,6 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });*/
     }, onStepResult: (dynamic response) async {
       print("Method: onStepResult, $response");
+      getJourneySummary();
     }, onStepCancelled: (dynamic response) async {
       print("Method: onStepCancelled, $response");
     }, onStepSkipped: (dynamic response) async {
@@ -212,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> getJourneySummary(String journeyId) async {
+  Future<void> getJourneySummary() async {
     try {
       IDWise.getJourneySummary(onJourneySummary: (dynamic response) {
         handleJourneySummary(response);
@@ -229,6 +228,8 @@ class _MyHomePageState extends State<MyHomePage> {
       print("JourneySummary - Error:  ${response["error"].toString()}");
       bool isCompleted = response["summary"]["is_completed"];
       print("JourneySummary - Completed: $isCompleted");
+      print(
+          "JourneySummary - interim_rules: ${response["summary"]["result"]["interim_rule_details"].toString()}");
 
       if (isCompleted) {
         context.read<MyStore>().setJourneyCompleted(true);
