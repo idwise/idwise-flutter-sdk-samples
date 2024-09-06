@@ -1,0 +1,96 @@
+{
+  "journey_document": "document",
+  "journey_selfie": "selfie",
+  "journey_document_opt_selfie": "one_documents_one_selfie",
+  "journey_document_prompt_opt_selfie": "one_documents_one_selfie",
+  "journey_two_documents_selfie": "two_documents_one_selfie",
+  "journey_two_documents_opts_selfie": "two_documents_one_selfie",
+  "journey_document_selfie_mcs": "one_documents_one_selfie",
+  "journey_document_selfie_mcs_try_again": "one_documents_one_selfie",
+  "journey_document_selfie_mcs_resume_sequential": "one_documents_one_selfie",
+  "journey_document_selfie_mcs_invalid": "one_documents_one_selfie_invalid",
+  "journey_document_selfie_mcs_invalid_resume_journey": "one_documents_one_selfie_invalid",
+  "journey_two_documents_selfie_mcs": "two_documents_one_selfie",
+  "journey_two_documents_opt_selfie_mcs": "two_documents_one_selfie",
+  "journey_document_mcs": "document",
+  "journey_document_selfie": "one_documents_one_selfie",
+  "journey_document_selfie_invalid": "one_documents_one_selfie_invalid",
+  "journey_two_documents_opt_selfie": "two_documents_one_selfie",
+  "journey_selfie_opt_two_documents_opt": "one_selfie_two_documents",
+  "journey_document_opt_selfie_mcs": "one_documents_one_selfie",
+  "journey_document_prompt_opt_selfie_mcs": "one_documents_one_selfie",
+  "journey_two_documents_opts_selfie_mcs": "two_documents_one_selfie",
+  "journey_selfie_opt_two_documents_opt_mcs": "one_selfie_two_documents",
+  "selfie": {
+    "0": [
+      "selfie"
+    ]
+  },
+  "document": {
+    "0": [
+      "dl_front"
+    ],
+    "1": [
+      "dl_back"
+    ]
+  },
+  "one_documents_one_selfie": {
+    "0": [
+      "dl_front"
+    ],
+    "1": [
+      "dl_back"
+    ],
+    "2": [
+      "selfie"
+    ]
+  },
+  "one_documents_one_selfie_invalid": {
+    "0": [
+      "invalid_document",
+      "dl_front"
+    ],
+    "1": [
+      "invalid_document",
+      "dl_back"
+    ],
+    "2": [
+      "invalid_selfie",
+      "selfie"
+    ]
+  },
+  "two_documents_one_selfie": {
+    "0": [
+      "dl_front"
+    ],
+    "1": [
+      "dl_back"
+    ],
+    "2": [
+      "dl_front"
+    ],
+    "3": [
+      "dl_back"
+    ],
+    "4": [
+      "selfie"
+    ]
+  },
+  "one_selfie_two_documents": {
+    "0": [
+      "selfie"
+    ],
+    "1": [
+      "dl_front"
+    ],
+    "2": [
+      "dl_back"
+    ],
+    "3": [
+      "dl_front"
+    ],
+    "4": [
+      "dl_back"
+    ]
+  }
+}

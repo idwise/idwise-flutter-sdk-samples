@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:idwise_flutter_sdk/idwise_flutter.dart';
+import 'package:idwise_flutter_sdk/idwise.dart';
 
 void main() {
   runApp(const MyApp());
@@ -55,12 +55,10 @@ class _MyHomePageState extends State<MyHomePage> {
   static const methodChannelName = "com.idwise.fluttersampleproject/idwise";
   static const platformChannel = MethodChannel(methodChannelName);
 
-  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
+  late IDWiseJourneyCallbacks _journeyCallbacks;
 
-  String IDWISE_CLIENT_KEY =
-      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T21oUFlubE9VRXRpVVRkMWVubHBjbGhUYld4aU1GcDNOMWcyTkVwWWNrTXlOa1Z4U21oWlNsaz0="; // Provided by IDWise
-  String JOURNEY_DEFINITION_ID =
-      "d2425fc5-e621-4ab5-ac45-6ec91b9b3b23"; // Provided by IDWise
+  String IDWISE_CLIENT_KEY = "CLIENT-KEY"; // Provided by IDWise
+  String FLOW_ID = "FLOW-ID"; // Provided by IDWise
   String referenceNo = "<REFERENCE_NO>";
   String LOCALE = "en";
 
@@ -72,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void setupCallbacks() {
-    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
+    _journeyCallbacks = IDWiseJourneyCallbacks(
         onJourneyStarted: (dynamic journeyInfo) =>
             print("onJourneyStarted: $journeyInfo"),
         onJourneyCompleted: (dynamic journeyInfo) =>
@@ -86,8 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void initializeSDK() {
     try {
-      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
-          onError: (error) {
+      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseTheme.DARK, onError: (error) {
         print("onError in _idwiseFlutterPlugin: $error");
       });
     } on PlatformException catch (e) {
@@ -98,7 +95,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> startJourney() async {
     try {
       IDWise.startJourney(
-          JOURNEY_DEFINITION_ID, referenceNo, LOCALE, _journeyCallbacks);
+          flowId: FLOW_ID,
+          referenceNo: referenceNo,
+          locale: LOCALE,
+          applicantDetails: null,
+          journeyCallbacks: _journeyCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -141,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               child: const Text('Start SDK'),
               style: ElevatedButton.styleFrom(
-                  primary: const Color(0xff4B5EB9),
+                  foregroundColor: const Color(0xff4B5EB9),
                   textStyle: const TextStyle(color: Colors.white)),
               onPressed: startJourney,
             )

@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:idwise_flutter_sdk/idwise_flutter.dart';
+import 'package:idwise_flutter_sdk/idwise.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -76,8 +76,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String? _imageBytes;
 
-  late IDWiseSDKJourneyCallbacks _journeyCallbacks;
-  late IDWiseSDKStepCallbacks _stepCallbacks;
+  late IDWiseJourneyCallbacks _journeyCallbacks;
+  late IDWiseStepCallbacks _stepCallbacks;
 
   @override
   void initState() {
@@ -89,39 +89,40 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void setupCallbacks() {
-    _journeyCallbacks = IDWiseSDKJourneyCallbacks(
-        onJourneyStarted: (dynamic journeyInfo) {
-          print("Method: onJourneyStarted, $journeyInfo");
+    _journeyCallbacks = IDWiseJourneyCallbacks(
+        onJourneyStarted: (dynamic journeyStartedInfo) {
+          print("Method: onJourneyStarted, $journeyStartedInfo");
           context.read<MyStore>().setJourneyStatus(true);
-          saveJourneyId(journeyInfo["journeyId"]);
-          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          saveJourneyId(journeyStartedInfo["journeyId"]);
+          context.read<MyStore>().setJourneyId(journeyStartedInfo["journeyId"]);
           getJourneySummary();
         },
-        onJourneyCompleted: (dynamic journeyInfo) =>
-            print("onJourneyCompleted: $journeyInfo"),
-        onJourneyCancelled: (dynamic journeyInfo) =>
-            print("onJourneyCancelled: $journeyInfo"),
-        onJourneyResumed: (dynamic journeyInfo) {
-          print("Method: onJourneyResumed, ${journeyInfo["journeyId"]}");
+        onJourneyCompleted: (dynamic journeyCompletedInfo) =>
+            print("onJourneyCompleted: $journeyCompletedInfo"),
+        onJourneyCancelled: (dynamic journeyCancelledInfo) =>
+            print("onJourneyCancelled: $journeyCancelledInfo"),
+        onJourneyResumed: (dynamic journeyResumedInfo) {
+          print("Method: onJourneyResumed, ${journeyResumedInfo["journeyId"]}");
           context.read<MyStore>().setJourneyStatus(true);
-          context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+          context.read<MyStore>().setJourneyId(journeyResumedInfo["journeyId"]);
           getJourneySummary();
         },
         onError: (dynamic error) => print("onError $error"));
 
-    _stepCallbacks = IDWiseSDKStepCallbacks(onStepCaptured: (dynamic response) {
-      print("Method: onStepCaptured, ${response["stepId"]}");
-      print("Method: capturedImage, ${response["capturedImage"]}");
+    _stepCallbacks =
+        IDWiseStepCallbacks(onStepCaptured: (dynamic stepCapturedInfo) {
+      print("Method: onStepCaptured, ${stepCapturedInfo["stepId"]}");
+      print("Method: capturedImage, ${stepCapturedInfo["capturedImage"]}");
       /*setState(() {
         _imageBytes = response["capturedImage"];
       });*/
-    }, onStepResult: (dynamic response) async {
-      print("Method: onStepResult, $response");
+    }, onStepResult: (dynamic stepResultInfo) async {
+      print("Method: onStepResult, $stepResultInfo");
       getJourneySummary();
-    }, onStepCancelled: (dynamic response) async {
-      print("Method: onStepCancelled, $response");
-    }, onStepSkipped: (dynamic response) async {
-      print("Method: onStepSkipped, $response");
+    }, onStepCancelled: (dynamic stepCancelledInfo) async {
+      print("Method: onStepCancelled, $stepCancelledInfo");
+    }, onStepSkipped: (dynamic stepSkippedInfo) async {
+      print("Method: onStepSkipped, $stepSkippedInfo");
     });
   }
 
@@ -144,18 +145,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _navigateStep(String stepId) async {
     print("StepId: $stepId");
-    IDWise.startStep(stepId);
+    IDWiseDynamic.startStep(stepId);
   }
 
   void _skipStep(String stepId) async {
     print("StepId: $stepId");
-    IDWise.skipStep(stepId);
+    IDWiseDynamic.skipStep(stepId);
   }
 
   Future<void> unloadSDK() async {
     print("unloadSDK");
 
-    IDWise.unloadSDK();
+    IDWiseDynamic.unloadSDK();
   }
 
   Future<void> startResumeJourney() async {
@@ -182,7 +183,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> initializeSDK() async {
     try {
-      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseSDKTheme.DARK,
+      IDWiseDynamic.initialize(IDWISE_CLIENT_KEY, IDWiseTheme.DARK,
           onError: (error) {
         print("onError in _idwiseFlutterPlugin: $error");
       });
@@ -195,8 +196,12 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final referenceNo = 'idwise_test_' + const Uuid().v4();
 
-      IDWise.startDynamicJourney(JOURNEY_DEFINITION_ID, referenceNo, LOCALE,
-          _journeyCallbacks, _stepCallbacks);
+      IDWiseDynamic.startJourney(
+          flowId: JOURNEY_DEFINITION_ID,
+          referenceNo: referenceNo,
+          locale: LOCALE,
+          journeyCallbacks: _journeyCallbacks,
+          stepCallbacks: _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -204,7 +209,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> resumeDynamicJourney(String journeyId) async {
     try {
-      IDWise.resumeDynamicJourney(JOURNEY_DEFINITION_ID, journeyId, LOCALE,
+      IDWiseDynamic.resumeJourney(JOURNEY_DEFINITION_ID, journeyId, LOCALE,
           _journeyCallbacks, _stepCallbacks);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
@@ -213,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getJourneySummary() async {
     try {
-      IDWise.getJourneySummary(onJourneySummary: (dynamic response) {
+      IDWiseDynamic.getJourneySummary(onJourneySummary: (dynamic response) {
         handleJourneySummary(response);
       });
     } on PlatformException catch (e) {

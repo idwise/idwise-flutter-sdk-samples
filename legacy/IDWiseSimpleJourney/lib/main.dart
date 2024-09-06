@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -78,9 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
       print("starting journey");
       const startJourneyArgs = {
-        "journeyDefinitionId": "<YOUR_JOURNEY_DEFINITION_ID>", // Replace from journey definition id
+        "flowId": "YOUR-FLOW-ID", // Replace with FLOW-ID
         "referenceNo": null, //Put your reference number here
-        "locale" : "en"
+        "locale": "en"
       };
       platformChannel.invokeMethod('startJourney', startJourneyArgs);
 
@@ -89,11 +90,11 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onJourneyStarted':
             print("Method: onJourneyStarted, ${handler.arguments.toString()}");
             break;
-          case 'onJourneyFinished':
-            print("Method: onJourneyFinished");
+          case 'onJourneyCompleted':
+            print("Method: onJourneyCompleted ${handler.arguments.toString()}");
             break;
           case 'onJourneyCancelled':
-            print("Method: onJourneyCancelled");
+            print("Method: onJourneyCancelled ${handler.arguments.toString()}");
             break;
           case 'onJourneyResumed':
             print("Method: onJourneyResumed, ${handler.arguments.toString()}");
@@ -111,12 +112,11 @@ class _MyHomePageState extends State<MyHomePage> {
               print("Exception : JourneySummary: $e");
             }
             break;
-          default :
+          default:
             print('Unknown method from MethodChannel: ${handler.method}');
             break;
         }
       });
-
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               child: const Text('Start SDK'),
               style: ElevatedButton.styleFrom(
-                  primary: const Color(0xff4B5EB9),
+                  foregroundColor: const Color(0xff4B5EB9),
                   textStyle: const TextStyle(color: Colors.white)),
               onPressed: _startIDWise,
             )

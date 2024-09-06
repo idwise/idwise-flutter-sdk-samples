@@ -15,11 +15,12 @@ import UIKit
 
     // Native code bridging Swift -> Dart , calling iOS SDK here
     let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
-    let channel = FlutterMethodChannel(
+    let fchannel = FlutterMethodChannel(
       name: methodChannelName,
       binaryMessenger: controller.binaryMessenger)
-    self.channel = channel
-    channel.setMethodCallHandler({
+    self.channel = fchannel
+      
+    channel?.setMethodCallHandler({
       [self]
       (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
 
@@ -27,66 +28,79 @@ import UIKit
       case "initialize":
         // receiving arguments from Dart side and consuming here
 
-        var clientKey: String = ""  // should not be empty
-        var sdkTheme: IDWiseSDKTheme = IDWiseSDKTheme.systemDefault
+        var clientKey: String = ""
+        var sdkTheme: IDWiseTheme = IDWiseTheme.systemDefault
         if let parameteres = call.arguments as? [String: Any] {
           if let clientkey = parameteres["clientKey"] as? String {
             clientKey = clientkey
           }
           if let theme = parameteres["theme"] as? String {
             if theme == "LIGHT" {
-              sdkTheme = IDWiseSDKTheme.light
+              sdkTheme = IDWiseTheme.light
             } else if theme == "DARK" {
-              sdkTheme = IDWiseSDKTheme.dark
+              sdkTheme = IDWiseTheme.dark
             } else {
-              sdkTheme = IDWiseSDKTheme.systemDefault
+              sdkTheme = IDWiseTheme.systemDefault
             }
           }
 
         }
+
         IDWise.initialize(clientKey: clientKey, theme: sdkTheme) { error in
-          result("got some error")
+          print("onInitializeError")
           if let err = error {
-            channel.invokeMethod(
-              "onError",
-              arguments: ["errorCode": err.code, "message": err.message] as [String: Any])
+            do {
+                let jsonEncoder = JSONEncoder()
+                let jsonData = try jsonEncoder.encode(error)
+                let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+                channel?.invokeMethod("onInitializeError", arguments: jsonResp)
+            } catch{
+              print(error)
+            }
+            
           }
         }
 
-      case "startDynamicJourney":
+      case "startJourney":
         // receiving arguments from Dart side and consuming here
 
         var referenceNo: String = ""  // optional parameter
-        var locale: String = "en"
-        var journeyDefinitionId = ""
-        if let parameteres = call.arguments as? [String: Any] {
-          if let refNo = parameteres["referenceNo"] as? String {
-            referenceNo = refNo
-          }
-          if let loc = parameteres["locale"] as? String {
-            locale = loc
-          }
-          if let journeyDefId = parameteres["journeyDefinitionId"] as? String {
-            journeyDefinitionId = journeyDefId
-          }
+      var locale: String = "en"
+      var journeyDefinitionId = ""
+      var applicantDetails :[String:String]? 
+
+      if let parameteres = call.arguments as? [String: Any] {
+        if let refNo = parameteres["referenceNo"] as? String {
+          referenceNo = refNo
         }
-        IDWise.startDynamicJourney(
-          journeyDefinitionId: journeyDefinitionId, referenceNumber: referenceNo, locale: locale,
-          journeyDelegate: self, stepDelegate: self)
-        result("successfully started journey")
+        if let loc = parameteres["locale"] as? String {
+          locale = loc
+        }
+         if let appctDetails = parameteres["applicantDetails"] as? [String:String] {
+          applicantDetails = appctDetails
+        }
+        if let journeyDefId = parameteres["flowId"] as? String {
+          journeyDefinitionId = journeyDefId
+        }
+      }
+      IDWiseDynamic.startJourney(
+        flowId: journeyDefinitionId, referenceNumber: referenceNo, locale: locale,applicantDetails: applicantDetails,
+        journeyCallbacks: self, stepCallbacks: self)
+      result("successfully started journey")
+      
       case "startStep":
         if let parameteres = call.arguments as? [String: Any] {
           if let stepId = parameteres["stepId"] as? String {
-            IDWise.startStep(stepId: stepId)
+            IDWiseDynamic.startStep(stepId: stepId)
           }
         }
       case "skipStep":
         if let parameteres = call.arguments as? [String: Any] {
           if let stepId = parameteres["stepId"] as? String {
-            IDWise.skipStep(stepId: stepId)
+            IDWiseDynamic.skipStep(stepId: stepId)
           }
         }
-      case "resumeDynamicJourney":
+      case "resumeJourney":
         var locale: String = "en"
         var journeyDefinitionId = ""
         var journeyId = ""
@@ -102,36 +116,30 @@ import UIKit
           }
         }
 
-        IDWise.resumeDynamicJourney(
-          journeyDefinitionId: journeyDefinitionId, journeyId: journeyId, locale: locale,
-          journeyDelegate: self, stepDelegate: self)
+        IDWiseDynamic.resumeJourney(
+          flowId: journeyDefinitionId, journeyId: journeyId, locale: locale,
+          journeyCallbacks: self, stepCallbacks: self)
 
-      case "finishDynamicJourney":
-        IDWise.finishDynamicJourney()
+      case "finishJourney":
+        IDWiseDynamic.finishJourney()
 
       case "getJourneySummary":
-        IDWise.getJourneySummary { summary, error in
+        IDWiseDynamic.getJourneySummary { summary, summaryError in
 
           do {
-            let jsonData = try JSONEncoder().encode(summary)
-            var jsonString: Any?
-            jsonString = try? JSONSerialization.jsonObject(
-              with: jsonData, options: .mutableContainers)
-
-            channel.invokeMethod(
-              "journeySummary",
-              arguments: ["summary": jsonString, "error": error] as [String: Any])
+            let responseSummary = JourneySummaryExposed(summary: summary,error: summaryError)
+          
+            let jsonData = try JSONEncoder().encode(responseSummary)
+            let jsonString = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod("journeySummary", arguments: jsonString)
 
           } catch {
-            channel.invokeMethod(
-              "journeySummary",
-              arguments: ["summary": "", "error": error] as [String: Any])
-
+              print(error)
           }
         }
 
       case "unloadSDK":
-        IDWise.unloadSDK()
+        IDWiseDynamic.unloadSDK()
 
       default:
         result(FlutterMethodNotImplemented)
@@ -143,79 +151,143 @@ import UIKit
   }
 }
 
-extension AppDelegate: IDWiseSDKJourneyDelegate {
-  func onJourneyResumed(journeyID: String) {
-    channel?.invokeMethod(
-      "onJourneyResumed",
-      arguments: journeyID)
+extension AppDelegate: IDWiseJourneyCallbacks {
+  public func  onJourneyResumed(journeyResumedInfo: JourneyResumedInfo)  {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyResumedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+            "onJourneyResumed", arguments: jsonResp)
+      }catch{
+          print(error)
+      }
+    
   }
 
-  func onError(error: IDWiseSDKError) {
-    channel?.invokeMethod(
-      "onError",
-      arguments: ["errorCode": error.code, "message": error.message] as [String: Any])
+  public func onError(error : IDWiseError)  {
+   
+          do {
+              let jsonEncoder = JSONEncoder()
+              let jsonData = try jsonEncoder.encode(error)
+              let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+              channel?.invokeMethod("onError", arguments: jsonResp)
+          } catch{
+            print(error)
+          }
+          
+        
   }
 
-  func JourneyStarted(journeyID: String) {
-    channel?.invokeMethod(
-      "onJourneyStarted",
-      arguments: journeyID)
+  public func onJourneyStarted(journeyStartedInfo: JourneyStartedInfo) {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyStartedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+            "onJourneyStarted", arguments: jsonResp)
+      } catch {
+          print(error)
+      }
   }
 
-  func JourneyFinished() {
-    channel?.invokeMethod(
-      "onJourneyFinished",
-      arguments: nil)
+    public func onJourneyCompleted(journeyCompletedInfo: JourneyCompletedInfo) {
+        
+        do{
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(journeyCompletedInfo)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod(
+                "onJourneyCompleted", arguments: jsonResp)
+        }catch{
+            print(error)
+        }
+    }
+
+    public func onJourneyCancelled(journeyCancelledInfo: JourneyCancelledInfo) {
+        do{
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(journeyCancelledInfo)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod(
+                "onJourneyCancelled", arguments: jsonResp)
+        }catch{
+            print(error)
+        }
+    }
+
+}
+
+extension AppDelegate: IDWiseStepCallbacks {
+  public func onStepCaptured(stepCapturedInfo:StepCapturedInfo) {
+        do{
+            let originalImage = convertImageToBase64String(img: stepCapturedInfo.originalImage)
+            let croppedImage = convertImageToBase64String(img: stepCapturedInfo.croppedImage)
+    
+            let captureResponse = OnStepCapturedExposed(stepId: stepCapturedInfo.stepId, originalImage: originalImage, croppedImage: croppedImage)
+            
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(captureResponse)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            
+            channel?.invokeMethod(
+              "onStepCaptured",
+              arguments: jsonResp)
+        }catch{
+            print(error)
+        }
   }
 
-  func JourneyCancelled() {
-    channel?.invokeMethod(
-      "onJourneyCancelled",
-      arguments: nil)
+  public func onStepResult(stepResultInfo:StepResultInfo) {
+
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(stepResultInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod("onStepResult", arguments: jsonResp)
+      }catch{
+          print(error)
+      }
+
+  }
+
+
+    public func onStepCancelled(stepCancelledInfo: StepCancelledInfo) {
+        do{
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(stepCancelledInfo)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod(
+                "onStepCancelled", arguments: jsonResp)
+        }catch{
+            print(error)
+        }
+  }
+
+  public func onStepSkipped(stepSkippedInfo: StepSkippedInfo) {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(stepSkippedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod("onStepSkipped", arguments: jsonResp)
+      }catch{
+          print(error)
+      }
+  }
+
+  func convertImageToBase64String(img: UIImage?) -> String {
+    return img?.jpegData(compressionQuality: 1)?.base64EncodedString() ?? ""
   }
 
 }
 
-extension AppDelegate: IDWiseSDKStepDelegate {
-  func onStepCaptured(stepId: Int, capturedImage: UIImage?) {
-    channel?.invokeMethod(
-      "onStepCaptured",
-      arguments: stepId)
-  }
+private struct JourneySummaryExposed: Codable {
+    var summary: IDWiseSDK.JourneySummary?
+    var error: IDWiseError?
+}
 
-  func onStepResult(stepId: Int, stepResult: IDWiseSDK.StepResult?) {
-
-    do {
-      let jsonData = try JSONEncoder().encode(stepResult)
-      var jsonString: Any?
-      jsonString = try? JSONSerialization.jsonObject(with: jsonData, options: .mutableContainers)
-
-      channel?.invokeMethod(
-        "onStepResult",
-        arguments: ["stepId": stepId, "stepResult": jsonString] as [String: Any?])
-
-    } catch {
-      channel?.invokeMethod(
-        "onStepResult",
-        arguments: ["stepId": stepId] as [String: Any])
-
-    }
-
-  }
-
-  func onStepConfirmed(stepId: String) {
-
-  }
-
-  public func onStepCancelled(stepId: String) {
-    channel?.invokeMethod(
-      "onStepCancelled",
-      arguments: ["stepId": stepId] as [String: Any])
-  }
-
-  public func onStepSkipped(stepId: String) {
-    channel?.invokeMethod(
-      "onStepSkipped",
-      arguments: ["stepId": stepId] as [String: Any])
-  }
+private struct OnStepCapturedExposed: Codable {
+    var stepId: String
+    var originalImage: String?
+    var croppedImage: String?
 }

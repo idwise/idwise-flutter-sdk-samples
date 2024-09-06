@@ -54,22 +54,31 @@ import IDWiseSDK
           case "startJourney":
               // receiving arguments from Dart side and consuming here
 
-              var referenceNo: String = "" // optional parameter
-              var locale: String = "en"
-              var journeyDefinitionId = ""
-              if let parameteres = call.arguments as? [String:Any] {
-                  if let refNo = parameteres["referenceNo"] as? String {
-                      referenceNo = refNo
-                  }
-                  if let loc = parameteres["locale"] as? String {
-                      locale = loc
-                  }
-                  if let journeyDefId = parameteres["journeyDefinitionId"] as? String {
-                      journeyDefinitionId = journeyDefId
-                  }
-              }
-              IDWise.startJourney(journeyDefinitionId: journeyDefinitionId,referenceNumber: referenceNo,locale: locale, journeyDelegate: self)
-              result("successfully started journey")
+                var referenceNo: String = ""  // optional parameter
+                var locale: String = "en"
+                var journeyDefinitionId = ""
+                var applicantDetails :[String:String]? 
+                if let parameteres = call.arguments as? [String: Any] {
+                    if let refNo = parameteres["referenceNo"] as? String {
+                        referenceNo = refNo
+                    }
+                    if let loc = parameteres["locale"] as? String {
+                        locale = loc
+                    }
+
+                    if let appctDetails = parameteres["applicantDetails"] as? [String:String] {
+                        applicantDetails = appctDetails
+                    }
+
+                    if let journeyDefId = parameteres["flowId"] as? String {
+                        journeyDefinitionId = journeyDefId
+                    }
+                }
+
+                IDWise.startJourney(
+                    flowId: journeyDefinitionId, referenceNumber: referenceNo, locale: locale,applicantDetails: applicantDetails,
+                    journeyCallbacks: self)
+
           default:
               result(FlutterMethodNotImplemented)
           }
@@ -84,36 +93,69 @@ import IDWiseSDK
 
 
 
-extension AppDelegate:IDWiseSDKJourneyDelegate {
-    func onJourneyResumed(journeyID: String) {
-        channel?.invokeMethod(
-                    "onJourneyResumed",
-                    arguments: journeyID)
-    }
+extension AppDelegate:IDWiseJourneyCallbacks  {
+  public func  onJourneyResumed(journeyResumedInfo: JourneyResumedInfo)  {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyResumedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+            "onJourneyResumed", arguments: jsonResp)
+      }catch{
+          print(error)
+      }
     
-    
-    func onError(error : IDWiseSDKError) {
-        channel?.invokeMethod(
-                    "onError",
-                    arguments: ["errorCode": error.code,"message": error.message] as [String : Any])
-    }
-    
-    func JourneyStarted(journeyID: String) {
-        channel?.invokeMethod(
-                    "onJourneyStarted",
-                    arguments: journeyID)
-    }
-    
-    func JourneyFinished() {
-        channel?.invokeMethod(
-                    "onJourneyFinished",
-                    arguments: nil)
-    }
-    
-    func JourneyCancelled() {
-        channel?.invokeMethod(
-                    "onJourneyCancelled",
-                    arguments: nil)
-    }
+  }
+
+  public func onError(error : IDWiseError)  {
    
+          do {
+              let jsonEncoder = JSONEncoder()
+              let jsonData = try jsonEncoder.encode(error)
+              let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+              channel?.invokeMethod("onError", arguments: jsonResp)
+          } catch{
+            print(error)
+          }
+          
+        
+  }
+
+  public func onJourneyStarted(journeyStartedInfo: JourneyStartedInfo) {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyStartedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+            "onJourneyStarted", arguments: jsonResp)
+      } catch {
+          print(error)
+      }
+  }
+
+    public func onJourneyCompleted(journeyCompletedInfo: JourneyCompletedInfo) {
+        
+        do{
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(journeyCompletedInfo)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod(
+                "onJourneyCompleted", arguments: jsonResp)
+        }catch{
+            print(error)
+        }
+    }
+
+    public func onJourneyCancelled(journeyCancelledInfo: JourneyCancelledInfo) {
+        do{
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(journeyCancelledInfo)
+            let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+            channel?.invokeMethod(
+                "onJourneyCancelled", arguments: jsonResp)
+        }catch{
+            print(error)
+        }
+    }
+
 }
