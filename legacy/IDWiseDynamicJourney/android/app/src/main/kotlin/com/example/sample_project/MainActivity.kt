@@ -9,12 +9,14 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-import com.idwise.sdk.IDWiseSDKCallback
-import com.idwise.sdk.IDWise
-import com.idwise.sdk.IDWiseSDKStepCallback
+import com.idwise.sdk.IDWiseJourneyCallbacks
+import com.idwise.sdk.IDWiseDynamic
+import com.idwise.sdk.IDWiseStepCallbacks
 import com.idwise.sdk.data.models.*
 import org.json.JSONObject
 import java.lang.reflect.Type
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
 
@@ -29,16 +31,16 @@ class MainActivity : FlutterActivity() {
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "initialize" -> {
-                    IDWise.unloadSDK()
+                    IDWiseDynamic.unloadSDK()
 
                     val clientKey = call.argument<String>("clientKey")
                     val theme = when (call.argument<String>("theme")) {
-                        "LIGHT" -> IDWiseSDKTheme.LIGHT
-                        "DARK" -> IDWiseSDKTheme.DARK
-                        else -> IDWiseSDKTheme.SYSTEM_DEFAULT
+                        "LIGHT" -> IDWiseTheme.LIGHT
+                        "DARK" -> IDWiseTheme.DARK
+                        else -> IDWiseTheme.SYSTEM_DEFAULT
                     }
 
-                    IDWise.initialize(clientKey!!, theme) { error ->
+                    IDWiseDynamic.initialize(clientKey!!, theme) { error ->
                         Log.d("IDWiseSDKCallback", "onError ${error?.message}")
                         result.error("ERROR", error!!.message, null)
                         methodChannel?.invokeMethod("onError", Gson().toJson(error))
@@ -47,34 +49,34 @@ class MainActivity : FlutterActivity() {
 
                 "startStep" -> {
                     val stepId = call.argument<String>("stepId")
-                    stepId?.let { IDWise.startStep(this, it); }
+                    stepId?.let { IDWiseDynamic.startStep(this, it); }
                 }
 
                 "skipStep" -> {
                     val stepId = call.argument<String>("stepId")
-                    stepId?.let { IDWise.skipStep(this, it); }
+                    stepId?.let { IDWiseDynamic.skipStep(it); }
                 }
 
-                "startDynamicJourney" -> {
+                "startJourney" -> {
                     Log.d("startDynamicJourney", "startDynamicJourney")
-                    val journeyDefinitionId = call.argument<String>("journeyDefinitionId")
+                    val journeyDefinitionId = call.argument<String>("flowId")
                     Log.d("startDynamicJourney", "journeyDefinitionId: $journeyDefinitionId")
                     val referenceNo = call.argument<String>("referenceNo")
                     Log.d("startDynamicJourney", "referenceNo: $referenceNo")
                     val locale = call.argument<String>("locale")
                     Log.d("startDynamicJourney", "locale: $locale")
 
-                    IDWise.startDynamicJourney(
-                        this,
-                        journeyDefinitionId!!,
-                        referenceNo,
-                        locale,
-                        journeyCallback = journeyCallback,
-                        stepCallback = stepCallback
+                    IDWiseDynamic.startJourney(
+                        context=this,
+                        flowId=journeyDefinitionId!!,
+                        referenceNo=referenceNo,
+                        locale=locale,
+                        journeyCallbacks = journeyCallback,
+                        stepCallbacks = stepCallback
                     )
                 }
 
-                "resumeDynamicJourney" -> {
+                "resumeJourney" -> {
                     Log.d("resumeDynamicJourney", "resumeDynamicJourney")
                     val journeyDefinitionId = call.argument<String>("journeyDefinitionId")
                     Log.d("resumeDynamicJourney", "journeyDefinitionId: $journeyDefinitionId")
@@ -83,40 +85,33 @@ class MainActivity : FlutterActivity() {
                     val locale = call.argument<String>("locale")
                     Log.d("resumeDynamicJourney", "locale: $locale")
 
-                    IDWise.resumeDynamicJourney(
-                        this,
-                        journeyDefinitionId!!,
-                        journeyId!!,
-                        locale,
-                        journeyCallback = journeyCallback,
-                        stepCallback = stepCallback
+                    IDWiseDynamic.resumeJourney(
+                        context=this,
+                        flowId=journeyDefinitionId!!,
+                        journeyId=journeyId!!,
+                        locale=locale,
+                        journeyCallbacks = journeyCallback,
+                        stepCallbacks = stepCallback
                     )
                 }
 
-                "finishDynamicJourney" -> {
-                    IDWise.finishDynamicJourney(it)
+                "finishJourney" -> {
+                    IDWiseDynamic.finishJourney()
                 }
 
                 "getJourneySummary" -> {
-                    IDWise.getJourneySummary(it, callback = { summary, error ->
+                    IDWiseDynamic.getJourneySummary(callback = { summary, error ->
 
                         val gson = Gson()
-                        val type: Type = object : TypeToken<HashMap<String, Any>>() {}.type
-                        val argsMap = hashMapOf<String, Any?>()
-
-                        summary?.let {
-                            argsMap["summary"] = gson.fromJson(gson.toJson(summary), type)
-                        }
-                        error?.let {
-                            argsMap["error"] = gson.fromJson(gson.toJson(error), type)
-                        }
-
-                        methodChannel?.invokeMethod("journeySummary", argsMap)
+                        val summaryResponse = JourneySummaryExposed(summary,error)
+                        
+                        Log.d("getJourneySummary.kt","response getJourneySummary $summaryResponse ")
+                        methodChannel?.invokeMethod("journeySummary", gson.toJson(summaryResponse))
                     })
                 }
 
                 "unloadSDK" -> {
-                    IDWise.unloadSDK()
+                    IDWiseDynamic.unloadSDK()
                 }
 
                 else -> result.error("NO_SUCH_METHOD", "NO SUCH METHOD", null)
@@ -126,37 +121,38 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private val journeyCallback = object : IDWiseSDKCallback {
-        override fun onJourneyStarted(journeyInfo: JourneyInfo) {
+    private val journeyCallback = object : IDWiseJourneyCallbacks {
+        override fun onJourneyStarted(journeyInfo: JourneyStartedInfo) {
             Log.d("IDWiseSDKCallback", "onJourneyStarted")
             methodChannel?.invokeMethod(
                 "onJourneyStarted",
-                journeyInfo.journeyId
+                Gson().toJson(journeyInfo)
             )
         }
 
         override fun onJourneyCompleted(
-            journeyInfo: JourneyInfo,
-            isSucceeded: Boolean
+            journeyInfo: JourneyCompletedInfo
         ) {
             Log.d("IDWiseSDKCallback", "onJourneyFinished")
-            methodChannel?.invokeMethod("onJourneyFinished", null)
+            methodChannel?.invokeMethod("onJourneyFinished", 
+                Gson().toJson(journeyInfo))
         }
 
-        override fun onJourneyCancelled(journeyInfo: JourneyInfo?) {
+        override fun onJourneyCancelled(journeyInfo: JourneyCancelledInfo) {
             Log.d("IDWiseSDKCallback", "onJourneyCancelled")
-            methodChannel?.invokeMethod("onJourneyCancelled", null)
+            methodChannel?.invokeMethod("onJourneyCancelled", 
+                Gson().toJson(journeyInfo))
         }
 
-        override fun onJourneyResumed(journeyInfo: JourneyInfo) {
+        override fun onJourneyResumed(journeyInfo: JourneyResumedInfo) {
             Log.d("IDWiseSDKCallback", "onJourneyResumed")
             methodChannel?.invokeMethod(
                 "onJourneyResumed",
-                journeyInfo.journeyId
+                Gson().toJson(journeyInfo)
             )
         }
 
-        override fun onError(error: IDWiseSDKError) {
+        override fun onError(error: IDWiseError) {
             Log.d(
                 "IDWiseSDKCallback",
                 "onError ${error.message}"
@@ -165,42 +161,50 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private val stepCallback = object : IDWiseSDKStepCallback {
-        override fun onStepCaptured(
-            stepId: String,
-            bitmap: Bitmap?,
-            croppedBitmap: Bitmap?
-        ) {
+    private val stepCallback = object : IDWiseStepCallbacks {
+        override fun onStepCaptured(stepCapturedInfo: StepCapturedInfo) {
             Log.d("IDWiseStepSDKCallback", "onStepCaptured")
-            methodChannel?.invokeMethod("onStepCaptured", stepId)
+           
+            val originalImage = convertImageToBase64String(stepCapturedInfo.originalImage)
+            val croppedImage = convertImageToBase64String(stepCapturedInfo.croppedImage)
+            val response = OnStepCapturedInfoExposed(stepCapturedInfo.stepId.toString(),originalImage,croppedImage)
+            
+            methodChannel?.invokeMethod("onStepCaptured", Gson().toJson(response))
         }
 
-        override fun onStepConfirmed(stepId: String) {
-            Log.d("IDWiseStepSDKCallback", "onStepConfirmed")
-            methodChannel?.invokeMethod("onStepConfirmed", stepId)
-        }
-
-        override fun onStepResult(stepId: String, stepResult: StepResult?) {
-            Log.d(
-                "IDWiseStepSDKCallback",
-                "onStepResult ${stepResult?.errorUserFeedbackDetails}"
-            )
-
-            val json = JSONObject()
-            json.put("stepId", stepId)
-            json.put("stepResult", Gson().toJson(stepResult))
-
-            methodChannel?.invokeMethod("onStepResult", json.toString())
-        }
-
-        override fun onStepCancelled(stepId: String) {
-            Log.d("IDWiseStepSDKCallback", "onStepCancelled")
-            methodChannel?.invokeMethod("onStepCancelled", stepId)
-        }
-
-        override fun onStepSkipped(stepId: String) {
+        override fun onStepSkipped(stepInfo: StepSkippedInfo) {
             Log.d("IDWiseStepSDKCallback", "onStepSkipped")
-            methodChannel?.invokeMethod("onStepSkipped", stepId)
+            methodChannel?.invokeMethod("onStepSkipped", Gson().toJson(stepInfo))
+        }
+
+        override fun onStepCancelled(stepInfo: StepCancelledInfo) {
+            Log.d("IDWiseStepSDKCallback", "onStepCancelled")
+            methodChannel?.invokeMethod("onStepCancelled", Gson().toJson(stepInfo))
+        }
+
+        override fun onStepResult(stepInfo: StepResultInfo) {
+            methodChannel?.invokeMethod("onStepResult" ,Gson().toJson(stepInfo))
         }
     }
+
+    fun convertImageToBase64String(bitmap: Bitmap?): String {
+        if (bitmap == null || bitmap.isRecycled) return ""
+
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val b = baos.toByteArray()
+        return Base64.encodeToString(b, Base64.NO_WRAP)
+    }
+
+    internal data class OnStepCapturedInfoExposed(
+        val stepId:String,
+        val originalImage:String?,
+        val croppedImage:String
+    )
+
+
+    internal data class JourneySummaryExposed(
+        val summary:JourneySummary?,
+        val error:IDWiseError?
+    )
 }

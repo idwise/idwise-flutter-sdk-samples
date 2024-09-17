@@ -1,0 +1,115 @@
+[
+  {
+    "shortDescription" : "https:\/\/github.com\/ultralytics\/yolov5",
+    "metadataOutputVersion" : "3.0",
+    "outputSchema" : [
+      {
+        "dataType" : "Double",
+        "hasShapeFlexibility" : "1",
+        "isOptional" : "0",
+        "shapeFlexibility" : "0... × 1",
+        "shapeRange" : "[[0, -1], [1, 1]]",
+        "formattedType" : "MultiArray (Double 0 × 1)",
+        "type" : "MultiArray",
+        "shape" : "[0, 1]",
+        "name" : "confidence",
+        "shortDescription" : "Boxes × Class confidence (see user-defined metadata \"classes\")"
+      },
+      {
+        "dataType" : "Double",
+        "hasShapeFlexibility" : "1",
+        "isOptional" : "0",
+        "shapeFlexibility" : "0... × 4",
+        "shapeRange" : "[[0, -1], [4, 4]]",
+        "formattedType" : "MultiArray (Double 0 × 4)",
+        "type" : "MultiArray",
+        "shape" : "[0, 4]",
+        "name" : "coordinates",
+        "shortDescription" : "Boxes × [x, y, width, height] (relative to image size)"
+      }
+    ],
+    "version" : "https:\/\/github.com\/ultralytics\/yolov5",
+    "modelParameters" : [
+
+    ],
+    "author" : "glenn.jocher@ultralytics.com",
+    "specificationVersion" : 4,
+    "storagePrecision" : "Mixed (Float32, Int8)",
+    "license" : "https:\/\/github.com\/ultralytics\/yolov5\/blob\/master\/LICENSE",
+    "computePrecision" : "Float16",
+    "isUpdatable" : "0",
+    "availability" : {
+      "macOS" : "10.15",
+      "tvOS" : "13.0",
+      "visionOS" : "1.0",
+      "watchOS" : "6.0",
+      "iOS" : "13.0",
+      "macCatalyst" : "13.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_pipeline",
+      "structure" : [
+        {
+          "name" : "MLModelType_neuralNetwork"
+        },
+        {
+          "name" : "MLModelType_nonMaximumSuppression"
+        }
+      ]
+    },
+    "inputSchema" : [
+      {
+        "height" : "640",
+        "colorspace" : "RGB",
+        "isOptional" : "0",
+        "width" : "640",
+        "isColor" : "1",
+        "formattedType" : "Image (Color 640 × 640)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "Input image",
+        "name" : "image"
+      },
+      {
+        "isOptional" : "0",
+        "formattedType" : "Double",
+        "type" : "Double",
+        "name" : "iouThreshold",
+        "shortDescription" : "(optional) IOU Threshold override (default: 0.45)"
+      },
+      {
+        "isOptional" : "0",
+        "formattedType" : "Double",
+        "type" : "Double",
+        "name" : "confidenceThreshold",
+        "shortDescription" : "(optional) Confidence Threshold override (default: 0.25)"
+      }
+    ],
+    "classLabels" : [
+      "Doc"
+    ],
+    "generatedClassName" : "document_detector",
+    "userDefinedMetadata" : {
+      "confidence_threshold" : "0.25",
+      "iou_threshold" : "0.45",
+      "classes" : "Doc"
+    },
+    "neuralNetworkLayerTypeHistogram" : {
+      "Concat" : 13,
+      "UnaryPower" : 3,
+      "Convolution" : 60,
+      "ActivationSigmoid" : 60,
+      "ReshapeStatic" : 6,
+      "LoadConstantND" : 6,
+      "Transpose" : 3,
+      "UpsampleNearestNeighbor" : 2,
+      "PoolingMax" : 3,
+      "SplitND" : 4,
+      "Squeeze" : 1,
+      "Add" : 10,
+      "Multiply" : 71,
+      "ConcatND" : 4
+    },
+    "method" : "predict"
+  }
+]

@@ -1,0 +1,79 @@
+[
+  {
+    "metadataOutputVersion" : "3.0",
+    "storagePrecision" : "Int8",
+    "outputSchema" : [
+      {
+        "isOptional" : "0",
+        "keyType" : "String",
+        "formattedType" : "Dictionary (String → Double)",
+        "type" : "Dictionary",
+        "name" : "var_826",
+        "shortDescription" : ""
+      },
+      {
+        "isOptional" : "0",
+        "formattedType" : "String",
+        "type" : "String",
+        "name" : "classLabel",
+        "shortDescription" : ""
+      }
+    ],
+    "modelParameters" : [
+
+    ],
+    "specificationVersion" : 4,
+    "computePrecision" : "Float16",
+    "isUpdatable" : "0",
+    "availability" : {
+      "macOS" : "10.15",
+      "tvOS" : "13.0",
+      "visionOS" : "1.0",
+      "watchOS" : "6.0",
+      "iOS" : "13.0",
+      "macCatalyst" : "13.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_neuralNetworkClassifier"
+    },
+    "userDefinedMetadata" : {
+      "com.github.apple.coremltools.version" : "6.2",
+      "com.github.apple.coremltools.source" : "torch==1.12.1"
+    },
+    "classLabels" : [
+      "good_quality_score",
+      "blur_quality_score",
+      "compression_quality_score",
+      "glare_quality_score",
+      "grainy_noise_quality_score",
+      "low_brightness_quality_score",
+      "over_exposure_quality_score",
+      "none_id_score"
+    ],
+    "generatedClassName" : "document_quality_model",
+    "inputSchema" : [
+      {
+        "height" : "512",
+        "colorspace" : "RGB",
+        "isOptional" : "0",
+        "width" : "512",
+        "isColor" : "1",
+        "formattedType" : "Image (Color 512 × 512)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "",
+        "name" : "input_1"
+      }
+    ],
+    "neuralNetworkLayerTypeHistogram" : {
+      "ReshapeStatic" : 1,
+      "Add" : 10,
+      "PoolingAverage" : 1,
+      "Clip" : 35,
+      "Convolution" : 52,
+      "ActivationSigmoid" : 1,
+      "InnerProduct" : 1
+    },
+    "method" : "predict"
+  }
+]

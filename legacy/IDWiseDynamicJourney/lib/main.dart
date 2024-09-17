@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -130,36 +131,33 @@ class _MyHomePageState extends State<MyHomePage> {
       platformChannel.setMethodCallHandler((handler) async {
         switch (handler.method) {
           case 'onJourneyStarted':
+            print("on journey started ${handler.arguments}");
+            dynamic journeyInfo = json.decode(handler.arguments);
             context.read<MyStore>().setJourneyStatus(true);
-            saveJourneyId(handler.arguments.toString());
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyStarted, ${handler.arguments.toString()}");
+            saveJourneyId(journeyInfo["journeyId"]);
+            context.read<MyStore>().setJourneyId(journeyInfo["journeyId"]);
+            print("Method: onJourneyStarted, ${journeyInfo["journeyId"]}");
             getJourneySummary();
             break;
-          case 'onJourneyFinished':
+          case 'onJourneyCompleted':
             print("Method: onJourneyFinished");
             break;
           case 'onJourneyCancelled':
             print("Method: onJourneyCancelled");
             break;
           case 'onJourneyResumed':
+            dynamic journeyInfo = json.decode(handler.arguments);
             context.read<MyStore>().setJourneyStatus(true);
-            context.read<MyStore>().setJourneyId(handler.arguments.toString());
-            print("Method: onJourneyResumed, ${handler.arguments.toString()}");
-            getJourneySummary(handler.arguments.toString());
+            context.read<MyStore>().setJourneyId(journeyInfo['journeyId']);
+            print("Method: onJourneyResumed, ${journeyInfo['journeyId']}");
+            getJourneySummary();
             break;
           case 'onStepCaptured':
-            print("Method: onStepCaptured, ${handler.arguments.toString()}");
-            break;
-          case 'onStepConfirmed':
-            print("Method: onStepConfirmed, ${handler.arguments.toString()}");
+            print("Method: onStepCaptured, ${handler.arguments}");
             break;
           case 'onStepResult':
             print("Method: onStepResult, ${handler.arguments.toString()}");
-            String? journeyId = await retrieveJourneyId();
-            if (journeyId != null) {
-              getJourneySummary(journeyId);
-            }
+            getJourneySummary();
             break;
           case 'onStepCancelled':
             print("Method: onStepCancelled, ${handler.arguments.toString()}");
@@ -168,10 +166,11 @@ class _MyHomePageState extends State<MyHomePage> {
             print("Method: onStepSkipped, ${handler.arguments.toString()}");
             break;
           case 'onError':
-            print("Method: onError, ${handler.arguments.toString()}");
+            dynamic error = json.decode(handler.arguments);
+            print("Method: onError, ${error['code']}, ${error['message']}");
             break;
           case 'journeySummary':
-            handleJourneySummary(handler.arguments);
+            handleJourneySummary(json.decode(handler.arguments));
             break;
           default:
             print('Unknown method from MethodChannel: ${handler.method}');
@@ -200,11 +199,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> startDynamicJourney() async {
     try {
       final startJourneyArgs = {
-        "journeyDefinitionId": JOURNEY_DEFINITION_ID,
+        "flowId": JOURNEY_DEFINITION_ID,
         "referenceNo": 'idwise_test_' + const Uuid().v4(),
         "locale": LOCALE
       };
-      platformChannel.invokeMethod('startDynamicJourney', startJourneyArgs);
+      platformChannel.invokeMethod('startJourney', startJourneyArgs);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
@@ -217,13 +216,13 @@ class _MyHomePageState extends State<MyHomePage> {
         "journeyId": journeyId,
         "locale": LOCALE
       };
-      platformChannel.invokeMethod('resumeDynamicJourney', resumeJourneyArgs);
+      platformChannel.invokeMethod('resumeJourney', resumeJourneyArgs);
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }
   }
 
-  Future<void> getJourneySummary(String journeyId) async {
+  Future<void> getJourneySummary() async {
     try {
       platformChannel.invokeMethod('getJourneySummary');
     } on PlatformException catch (e) {
@@ -233,15 +232,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> handleJourneySummary(dynamic response) async {
     try {
-      print("JourneySummary - Details: ${response["summary"].toString()}");
+      print("JourneySummary - Details: ${response}");
       print("JourneySummary - Error:  ${response["error"].toString()}");
-      bool isCompleted = response["summary"]["is_completed"];
+      bool isCompleted = response["summary"]["isCompleted"];
       print("JourneySummary - Completed: $isCompleted");
 
       if (isCompleted) {
         context.read<MyStore>().setJourneyCompleted(true);
-        String? journeyId = await retrieveJourneyId();
-        platformChannel.invokeMethod('finishDynamicJourney');
         clearSaved();
       }
     } catch (e) {
