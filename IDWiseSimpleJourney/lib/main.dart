@@ -79,14 +79,19 @@ class _MyHomePageState extends State<MyHomePage> {
             print("onJourneyResumed: $journeyInfo"),
         onJourneyCancelled: (dynamic journeyInfo) =>
             print("onJourneyCancelled: $journeyInfo"),
+        onJourneyBlocked: (dynamic journeyInfo) =>
+            print("onJourneyBlocked: $journeyInfo"),
         onError: (dynamic error) => print("onError $error"));
   }
 
   void initializeSDK() {
     try {
-      IDWise.initialize(IDWISE_CLIENT_KEY, IDWiseTheme.DARK, onError: (error) {
-        print("onError in _idwiseFlutterPlugin: $error");
-      });
+      IDWise.initialize(
+          clientKey: IDWISE_CLIENT_KEY,
+          theme: IDWiseTheme.DARK,
+          onError: (error) {
+            print("onError in _idwiseFlutterPlugin: $error");
+          });
     } on PlatformException catch (e) {
       print("Failed : '${e.message}'.");
     }

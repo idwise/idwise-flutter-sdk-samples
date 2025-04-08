@@ -101,6 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
             print("onJourneyCompleted: $journeyCompletedInfo"),
         onJourneyCancelled: (dynamic journeyCancelledInfo) =>
             print("onJourneyCancelled: $journeyCancelledInfo"),
+        onJourneyBlocked: (dynamic journeyCancelledInfo) =>
+            print("onJourneyBlocked: $journeyCancelledInfo"),
         onJourneyResumed: (dynamic journeyResumedInfo) {
           print("Method: onJourneyResumed, ${journeyResumedInfo["journeyId"]}");
           context.read<MyStore>().setJourneyStatus(true);
