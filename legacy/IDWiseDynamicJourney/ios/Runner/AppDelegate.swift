@@ -2,7 +2,7 @@ import Flutter
 import IDWiseSDK
 import UIKit
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
 
   let methodChannelName = "com.idwise.fluttersampleproject/idwise"
@@ -152,6 +152,18 @@ import UIKit
 }
 
 extension AppDelegate: IDWiseJourneyCallbacks {
+  public func onJourneyBlocked(journeyBlockedInfo: IDWiseSDK.JourneyBlockedInfo) {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyBlockedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+              "onJourneyBlocked", arguments: jsonResp)
+      } catch {
+          print(error)
+      }
+  }
+    
   public func  onJourneyResumed(journeyResumedInfo: JourneyResumedInfo)  {
       do{
           let jsonEncoder = JSONEncoder()
