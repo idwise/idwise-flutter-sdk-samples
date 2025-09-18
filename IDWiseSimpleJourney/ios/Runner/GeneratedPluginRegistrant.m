@@ -6,10 +6,10 @@
 
 #import "GeneratedPluginRegistrant.h"
 
-#if __has_include(<idwise_nfc_flutter_sdk/IdwiseFlutterPlugin.h>)
-#import <idwise_nfc_flutter_sdk/IdwiseFlutterPlugin.h>
+#if __has_include(<idwise_flutter_sdk/IdwiseFlutterPlugin.h>)
+#import <idwise_flutter_sdk/IdwiseFlutterPlugin.h>
 #else
-@import idwise_nfc_flutter_sdk;
+@import idwise_flutter_sdk;
 #endif
 
 @implementation GeneratedPluginRegistrant
