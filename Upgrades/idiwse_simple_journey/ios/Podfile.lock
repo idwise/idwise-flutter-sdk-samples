@@ -1,0 +1,50 @@
+PODS:
+  - DocumentReader (8.2.4934):
+    - RegulaCommon (= 8.2.1410)
+  - DocumentReaderMRZRFID (8.2.13459)
+  - FingerprintPro (2.7.0)
+  - Flutter (1.0.0)
+  - idwise_nfc_flutter_sdk (5.6.1):
+    - Flutter
+    - IDWiseNFC (= 5.6.1)
+  - IDWiseNFC (5.6.1):
+    - DocumentReader
+    - DocumentReaderMRZRFID
+    - FingerprintPro (~> 2.7.0)
+    - Shield-Ptr (~> 1.5.49)
+  - RegulaCommon (8.2.1410)
+  - Shield-Ptr (1.5.50)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - idwise_nfc_flutter_sdk (from `.symlinks/plugins/idwise_nfc_flutter_sdk/ios`)
+
+SPEC REPOS:
+  https://github.com/idwise/ios-sdk-nfc:
+    - IDWiseNFC
+  trunk:
+    - DocumentReader
+    - DocumentReaderMRZRFID
+    - FingerprintPro
+    - RegulaCommon
+    - Shield-Ptr
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  idwise_nfc_flutter_sdk:
+    :path: ".symlinks/plugins/idwise_nfc_flutter_sdk/ios"
+
+SPEC CHECKSUMS:
+  DocumentReader: a2a54c516bb3bfa08a95a462fbd5d6e4d9e66ad0
+  DocumentReaderMRZRFID: d769efb3e1a39b5d6a0e290bdf924225b8f70ca5
+  FingerprintPro: 0c7dbd28fc83751ca64b06328e2fb22bbc7ed118
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  idwise_nfc_flutter_sdk: 8863a1f5ce2b0d0007fc96c85ffca1acb09ca7a9
+  IDWiseNFC: 59dbc6abe55950d5e12845ddd1a74ff78c194d61
+  RegulaCommon: 2fdfa8c0e79da83034e5577240135f40b22b7304
+  Shield-Ptr: 14319af04ee63dbad318b3e1714434bba99eed37
+
+PODFILE CHECKSUM: 6185ff3b4c3e915d0e4914a3b72d826d816bf70e
+
+COCOAPODS: 1.16.2

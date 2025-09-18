@@ -34,8 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  idwise_flutter_sdk: 5.4.0
   win32: ^5.10.1
+  idwise_nfc_flutter_sdk: ^5.6.3-alpha.1
 
 dev_dependencies:
   flutter_test:

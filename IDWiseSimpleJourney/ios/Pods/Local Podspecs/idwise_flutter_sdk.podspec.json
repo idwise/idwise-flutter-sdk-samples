@@ -1,6 +1,6 @@
 {
   "name": "idwise_flutter_sdk",
-  "version": "4.3.4",
+  "version": "5.4.0",
   "summary": "Flutter Plugin for IDWise SDK",
   "description": "Flutter Plugin for IDWise SDK",
   "homepage": "http://idwise.com",
@@ -16,12 +16,13 @@
   "source_files": "Classes/**/*",
   "static_framework": true,
   "dependencies": {
-    "Flutter": [
-
+    "Flutter": [],
+    "FingerprintPro": [
+      "2.7.0"
     ]
   },
   "platforms": {
-    "ios": "12.0"
+    "ios": "13.0"
   },
   "pod_target_xcconfig": {
     "EXCLUDED_ARCHS[sdk=iphonesimulator*]": "arm64"

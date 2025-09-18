@@ -57,9 +57,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late IDWiseJourneyCallbacks _journeyCallbacks;
 
-  String IDWISE_CLIENT_KEY = "CLIENT-KEY"; // Provided by IDWise
-  String FLOW_ID = "FLOW-ID"; // Provided by IDWise
-  String referenceNo = "<REFERENCE_NO>";
+  String IDWISE_CLIENT_KEY = ""; // Provided by IDWise
+  String FLOW_ID = ""; // Provided by IDWise
+  String referenceNo = "flutter_test_waqar";
   String LOCALE = "en";
 
   @override

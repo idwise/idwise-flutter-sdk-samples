@@ -20,7 +20,7 @@ variant_for_slice()
   "IDWiseSDK.xcframework/ios-arm64")
     echo ""
     ;;
-  "IDWiseSDK.xcframework/ios-x86_64-simulator")
+  "IDWiseSDK.xcframework/ios-arm64_x86_64-simulator")
     echo "simulator"
     ;;
   esac
@@ -32,8 +32,8 @@ archs_for_slice()
   "IDWiseSDK.xcframework/ios-arm64")
     echo "arm64"
     ;;
-  "IDWiseSDK.xcframework/ios-x86_64-simulator")
-    echo "x86_64"
+  "IDWiseSDK.xcframework/ios-arm64_x86_64-simulator")
+    echo "arm64 x86_64"
     ;;
   esac
 }
@@ -117,5 +117,5 @@ install_xcframework() {
   echo "Copied $source to $destination"
 }
 
-install_xcframework "${PODS_ROOT}/../.symlinks/plugins/idwise_flutter_sdk/ios/IDWiseSDK.xcframework" "idwise_flutter_sdk" "framework" "ios-arm64" "ios-x86_64-simulator"
+install_xcframework "${PODS_ROOT}/../.symlinks/plugins/idwise_flutter_sdk/ios/IDWiseSDK.xcframework" "idwise_flutter_sdk" "framework" "ios-arm64" "ios-arm64_x86_64-simulator"
 

@@ -67,11 +67,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static const JOURNEY_ID = "JOURNEY_ID";
 
-  static const STEP_ID_DOCUMENT = '10';
+  static const STEP_ID_DOCUMENT = '30';
   static const STEP_SELFIE = '20';
 
-  static const IDWISE_CLIENT_KEY = "CLIENT-KEY"; // Provided by IDWise
-  static const JOURNEY_DEFINITION_ID = "FLOW_ID"; // Provided by IDWise
+  static const IDWISE_CLIENT_KEY =
+      "QmFzaWMgWkRJME1qVm1ZelV0WlRZeU1TMDBZV0kxTFdGak5EVXRObVZqT1RGaU9XSXpZakl6T25OMVRFOWliWEZUU1RscE56VjJkRkpHVjBod1lXcGFWVFJDVFU1S01XVjVTemhRYm10SE5GUT0="; // Provided by IDWise
+
+  static const JOURNEY_DEFINITION_ID =
+      "a9622bda-bbfb-42c1-91f9-a13989f2a8fe"; // Provided by IDWise
   static const LOCALE = "en";
 
   String? _imageBytes;
@@ -353,7 +356,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         const TextStyle(color: Colors.white)),
                                 onPressed: store.isJourneyStarted
                                     ? () {
-                                        _skipStep(STEP_SELFIE);
+                                        _navigateStep(STEP_SELFIE);
                                       }
                                     : null)));
                   },
