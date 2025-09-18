@@ -145,6 +145,9 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onJourneyCancelled':
             print("Method: onJourneyCancelled");
             break;
+          case 'onJourneyBlocked':
+            print("Method: onJourneyBlocked");
+            break;
           case 'onJourneyResumed':
             dynamic journeyInfo = json.decode(handler.arguments);
             context.read<MyStore>().setJourneyStatus(true);
