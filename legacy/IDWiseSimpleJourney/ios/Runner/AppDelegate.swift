@@ -2,7 +2,7 @@ import UIKit
 import Flutter
 import IDWiseSDK
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
     
   let methodChannelName = "com.idwise.fluttersampleproject/idwise"
@@ -26,23 +26,7 @@ import IDWiseSDK
               // receiving arguments from Dart side and consuming here
               
               var clientKey: String = "" // should not be empty
-              var sdkTheme: IDWiseSDKTheme = IDWiseSDKTheme.systemDefault
-              if let parameteres = call.arguments as? [String:Any] {
-                  if let clientkey = parameteres["clientKey"] as? String {
-                      clientKey = clientkey
-                  }
-                  if let theme = parameteres["theme"] as? String {
-                      if theme == "LIGHT" {
-                          sdkTheme = IDWiseSDKTheme.light
-                      } else if theme == "DARK" {
-                          sdkTheme = IDWiseSDKTheme.dark
-                      } else  {
-                          sdkTheme = IDWiseSDKTheme.systemDefault
-                      }
-                  }
-                
-              }
-              IDWise.initialize(clientKey: clientKey,theme: sdkTheme) { error in
+              IDWise.initialize(clientKey: clientKey,theme: IDWiseTheme.dark) { error in
                   result("got some error")
                   if let err = error {
                       channel.invokeMethod(
@@ -94,6 +78,18 @@ import IDWiseSDK
 
 
 extension AppDelegate:IDWiseJourneyCallbacks  {
+  public func onJourneyBlocked(journeyBlockedInfo: IDWiseSDK.JourneyBlockedInfo) {
+      do{
+          let jsonEncoder = JSONEncoder()
+          let jsonData = try jsonEncoder.encode(journeyBlockedInfo)
+          let jsonResp = String(data: jsonData, encoding: String.Encoding.utf8)
+          channel?.invokeMethod(
+              "onJourneyBlocked", arguments: jsonResp)
+      }catch{
+          print(error)
+      }
+  }
+    
   public func  onJourneyResumed(journeyResumedInfo: JourneyResumedInfo)  {
       do{
           let jsonEncoder = JSONEncoder()

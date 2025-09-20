@@ -152,6 +152,14 @@ class MainActivity : FlutterActivity() {
             )
         }
 
+        override fun onJourneyBlocked(journeyInfo: JourneyBlockedInfo) {
+            Log.d("IDWiseSDKCallback", "onJourneyBlocked")
+            methodChannel?.invokeMethod(
+                "onJourneyBlocked",
+                Gson().toJson(journeyInfo)
+            )
+        }
+
         override fun onError(error: IDWiseError) {
             Log.d(
                 "IDWiseSDKCallback",

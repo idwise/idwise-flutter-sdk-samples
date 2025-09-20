@@ -99,6 +99,11 @@ class _MyHomePageState extends State<MyHomePage> {
           case 'onJourneyResumed':
             print("Method: onJourneyResumed, ${handler.arguments.toString()}");
             break;
+
+          case 'onJourneyBlocked':
+            print("Method: onJourneyBlocked, ${handler.arguments.toString()}");
+            break;
+
           case 'onError':
             print("Method: onError, ${handler.arguments.toString()}");
             break;
