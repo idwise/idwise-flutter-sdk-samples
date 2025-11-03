@@ -114,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _stepCallbacks =
         IDWiseStepCallbacks(onStepCaptured: (dynamic stepCapturedInfo) {
       print("Method: onStepCaptured, ${stepCapturedInfo["stepId"]}");
-      print("Method: capturedImage, ${stepCapturedInfo["capturedImage"]}");
+      print("Method: capturedImage, ${stepCapturedInfo["originalImage"]}");
       /*setState(() {
         _imageBytes = response["capturedImage"];
       });*/
