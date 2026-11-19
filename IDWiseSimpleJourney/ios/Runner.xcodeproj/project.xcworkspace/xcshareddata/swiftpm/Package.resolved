@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "idwise-ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/idwise/idwise-ios-sdk",
+      "state" : {
+        "revision" : "2edae2d86abc72213d962885ff9508a7283be1d6",
+        "version" : "6.9.9"
+      }
+    },
+    {
+      "identity" : "openssl",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzyzanowskim/OpenSSL.git",
+      "state" : {
+        "revision" : "7405324f9b1a64a79e5fa3660d2eda901d1337f2",
+        "version" : "3.3.1000"
+      }
+    }
+  ],
+  "version" : 2
+}
