@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/idwise/idwise-ios-sdk",
       "state" : {
-        "revision" : "2edae2d86abc72213d962885ff9508a7283be1d6",
-        "version" : "6.9.9"
+        "revision" : "a51126a11e27a2de78f1fa030a95621a59235b05",
+        "version" : "7.0.0"
       }
     },
     {
