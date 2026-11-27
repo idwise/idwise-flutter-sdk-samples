@@ -186,7 +186,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> initializeSDK() async {
     try {
       IDWiseDynamic.initialize(IDWISE_CLIENT_KEY, IDWiseTheme.DARK,
-          onError: (error) {
+          onSuccess: () {
+        print("IDWise SDK initialized successfully");
+      }, onError: (error) {
         print("onError in _idwiseFlutterPlugin: $error");
       });
     } on PlatformException catch (e) {

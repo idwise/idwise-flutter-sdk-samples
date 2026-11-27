@@ -89,6 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
       IDWise.initialize(
           clientKey: IDWISE_CLIENT_KEY,
           theme: IDWiseTheme.DARK,
+          onSuccess: () {
+            print("IDWise SDK initialized successfully");
+          },
           onError: (error) {
             print("onError in _idwiseFlutterPlugin: $error");
           });

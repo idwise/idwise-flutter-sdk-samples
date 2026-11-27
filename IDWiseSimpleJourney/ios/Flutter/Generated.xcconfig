@@ -1,14 +1,15 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=/Users/waqar/StudioProjects/flutter/flutter
-FLUTTER_APPLICATION_PATH=/Users/waqar/IDWise/samples/idwise-flutter-sdk-samples/IDWiseSimpleJourney
+FLUTTER_ROOT=/Users/waqarzahour/development/flutter
+FLUTTER_APPLICATION_PATH=/Users/waqarzahour/Documents/IDWise/idwise-flutter-sdk-samples/IDWiseSimpleJourney
 COCOAPODS_PARALLEL_CODE_SIGN=true
-FLUTTER_TARGET=lib/main.dart
+FLUTTER_TARGET=/Users/waqarzahour/Documents/IDWise/idwise-flutter-sdk-samples/IDWiseSimpleJourney/lib/main.dart
 FLUTTER_BUILD_DIR=build
 FLUTTER_BUILD_NAME=1.0.0
 FLUTTER_BUILD_NUMBER=1
-EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386 arm64
+EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
 EXCLUDED_ARCHS[sdk=iphoneos*]=armv7
+DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuNDEuOQ==,RkxVVFRFUl9DSEFOTkVMPVt1c2VyLWJyYW5jaF0=,RkxVVFRFUl9HSVRfVVJMPXVua25vd24gc291cmNl,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049MDBiMGM5MWYwNg==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NDJkM2Q3NWE1Ng==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMS41
 DART_OBFUSCATION=false
 TRACK_WIDGET_CREATION=true
 TREE_SHAKE_ICONS=false
-PACKAGE_CONFIG=.dart_tool/package_config.json
+PACKAGE_CONFIG=/Users/waqarzahour/Documents/IDWise/idwise-flutter-sdk-samples/IDWiseSimpleJourney/.dart_tool/package_config.json
